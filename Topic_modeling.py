@@ -7,67 +7,71 @@ from abc import ABC, abstractmethod
 
 class TopicModel(ABC):
     def __init__(self, dataset, folder_path, algorithm: str):
-        self.__max_num_topics = 100
-        self.__dataset = dataset
-        self.__folder_path = folder_path
-        self.__algorithm = algorithm
-        self.__dictionary = gensim.corpora.Dictionary(self.__dataset)
-        bow_corpus = [self.__dictionary.doc2bow(doc) for doc in self.__dataset]
+        self.max_num_topics = 100
+        self.dataset = dataset
+        self.folder_path = folder_path
+        self.algorithm = algorithm
+        self.dictionary = gensim.corpora.Dictionary(self.dataset)
+        bow_corpus = [self.dictionary.doc2bow(doc) for doc in self.dataset]
         tfidf = gensim.models.TfidfModel(bow_corpus)
         self.tfidf = tfidf
-        self.__corpus_tfidf = tfidf[bow_corpus]
+        self.corpus_tfidf = tfidf[bow_corpus]
+        super().__init__()
 
     def __save_dictionary(self):
-        dictionary_path = self.__folder_path + "dataset.dict"
-        self.__dictionary.save(dictionary_path)
+        dictionary_path = self.folder_path + "dataset.dict"
+        self.dictionary.save(dictionary_path)
 
-    def __save_tfidf_corpus(self):
-        tfidf_path = self.__folder_path + "dataset.tfidf_model"
+    def __save_tfidf_model(self):
+        tfidf_path = self.folder_path + "dataset.tfidf_model"
         self.tfidf.save(tfidf_path)
 
     def __save_topic_model(self, model):
-        model_path = self.__folder_path + self.__algorithm + '/model/' + self.__algorithm + '.model'
+        model_path = self.folder_path + self.algorithm + '/model/' + self.algorithm + '.model'
         model.save(model_path)
 
     def __plot_coherence_scores(self, coherence_scores):
-        figure_path = self.__folder_path + self.__algorithm + '/' + self.__algorithm + '_coherence.png'
-        save_coherence_plot(self.__max_num_topics, coherence_scores, figure_path)
+        figure_path = self.folder_path + self.algorithm + '/' + self.algorithm + '_coherence.png'
+        save_coherence_plot(self.max_num_topics, coherence_scores, figure_path)
 
     def __extract_dominant_topics(self, best_model):
         topic_clusters = []
-        for i in range(len(self.__corpus_tfidf)):
-            topic_distribution = dict(best_model[self.__corpus_tfidf[i]])
-            dominant_topic = max(topic_distribution, key=topic_distribution.get)
-            topic_clusters.append(dominant_topic)
+        remove_indices = []
+        for i in range(len(self.corpus_tfidf)):
+            if len(best_model[self.corpus_tfidf[i]]) == 0:
+                remove_indices.append(i)
+            else:
+                topic_distribution = dict(best_model[self.corpus_tfidf[i]])
+                dominant_topic = max(topic_distribution, key=topic_distribution.get)
+                topic_clusters.append(dominant_topic)
+        self.dataset = [i for j, i in enumerate(self.dataset) if j not in remove_indices]
+
         return topic_clusters
 
     def __extract_word2vec_models(self, df):
-        distribution_plot_path = self.__folder_path + self.__algorithm + '/topic_distribution.png'
+        distribution_plot_path = self.folder_path + self.algorithm + '/topic_distribution.png'
         plot_distribution(df, distribution_plot_path, 'topic')
         count = 0
-        word2vec_models_path = self.__folder_path + self.__algorithm + '/word2vec_models/'
+        word2vec_models_path = self.folder_path + self.algorithm + '/word2vec_models/'
         for category, df_category in df.groupby('topic'):
             count += 1
             model_name = word2vec_models_path + str(count) + ".model"
-            word2vec_trainer(df=df_category, size=60, model_path=model_name)
-
-    @abstractmethod
-    def __get_model(self, num_topics):
-        pass
+            word2vec_trainer(df=df_category, model_path=model_name)
 
     def save_dict_and_tfidf(self):
         self.__save_dictionary()
-        self.__save_tfidf_corpus()
+        self.__save_tfidf_model()
 
     def search_num_of_topics(self):
         coherence_scores = []
-        for i in range(self.__max_num_topics):
-            model = self.__get_model(i + 1)
-            cm = CoherenceModel(model=model, texts=self.__dataset,
-                                corpus=self.__corpus_tfidf, coherence='c_v')
+        for i in range(self.max_num_topics):
+            print(i)
+            model = self.get_model(i + 1)
+            cm = CoherenceModel(model=model, texts=self.dataset,
+                                corpus=self.corpus_tfidf, coherence='c_v')
             coherence_scores.append(cm.get_coherence())
         best_num_topics = coherence_scores.index(max(coherence_scores)) + 1
-        best_model = self.__get_model(best_num_topics)
+        best_model = self.get_model(best_num_topics)
         pprint(best_model.print_topics())
         self.__save_topic_model(best_model)
         self.__plot_coherence_scores(coherence_scores)
@@ -75,33 +79,38 @@ class TopicModel(ABC):
 
     def divide_into_clusters(self, best_model):
         topic_clusters = self.__extract_dominant_topics(best_model)
-        extended_df = pd.DataFrame(list(zip(list(self.__dataset["description"]),
-                                            topic_clusters)),
-                                   columns=['description', 'topic'])
-        self.extract_word2vec_models(extended_df)
+        extended_df = pd.DataFrame(list(zip(self.dataset, topic_clusters)), columns=['description', 'topic'])
+        self.__extract_word2vec_models(extended_df)
 
-    
+    @abstractmethod
+    def get_model(self, num_topics):
+        pass
+
+
 class LSA(TopicModel):
 
     def __init__(self, dataset, folder_path, algorithm: str):
         super().__init__(dataset, folder_path, algorithm)
 
-    def __get_model(self, num_topics):
-        lsa_model = gensim.models.LsiModel(self.__corpus_tfidf,
+    def get_model(self, num_topics):
+        lsa_model = gensim.models.LsiModel(self.corpus_tfidf,
                                            num_topics=num_topics,
-                                           id2word=self.__dictionary)
+                                           id2word=self.dictionary)
         return lsa_model
 
 
 class LDA(TopicModel):
+
     def __init__(self, dataset, folder_path, algorithm: str):
         super().__init__(dataset, folder_path, algorithm)
 
-    def __get_model(self, num_topics):
-        lda_model = gensim.models.LdaMulticore(self.__corpus_tfidf,
+    def get_model(self, num_topics):
+        start_time = time.time()
+        lda_model = gensim.models.LdaMulticore(self.corpus_tfidf,
                                                num_topics=num_topics,
-                                               id2word=self.__dictionary,
-                                               passes=10, workers=10, iterations=100)
+                                               id2word=self.dictionary,
+                                               passes=4, workers=10, iterations=100)
+        print("Time taken to train the word2vec model: " + str(time.time() - start_time))
         return lda_model
 
 
@@ -118,10 +127,10 @@ def save_coherence_plot(max_num_topics, coherence_scores, figure_path):
 
 
 def main():
-    conf = toml.load('../config-temp.toml')
-    topic_modeling_path = '../' + conf['topic_modeling_path']
-    df = pd.read_csv('../' + conf["preprocessed_data_path"])
-    texts = list(df["description"])
+    conf = toml.load('config.toml')
+    topic_modeling_path = conf['topic_modeling_path']
+    df = pd.read_csv(conf["preprocessed_data_path"])
+    texts = [literal_eval(x) for x in list(df["description"])]
 
     lsa_obj = LSA(texts, topic_modeling_path, "lsa")
     best_lsa_model = lsa_obj.search_num_of_topics()

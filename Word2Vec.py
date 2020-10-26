@@ -17,9 +17,10 @@ def plot_distribution(df, plot_path, col):
 
 def word2vec_trainer(df, model_path, size=70):
     list_of_tokens = list(df["description"])
+    if isinstance(list_of_tokens[0], str):
+        list_of_tokens = [literal_eval(x) for x in list_of_tokens]
     start_time = time.time()
-    model = Word2Vec([literal_eval(x) for x in list_of_tokens],
-                     min_count=1, size=size, workers=3, window=3, sg=1)
+    model = Word2Vec(list_of_tokens, min_count=1, size=size, workers=3, window=3, sg=1)
     print("Time taken to train the word2vec model: " + str(time.time() - start_time))
     model.save(model_path)
     write_w2vec_vectors('.'.join(model_path.split(".")[:-1])+'_w2v_vectors.csv', df, model, size)
