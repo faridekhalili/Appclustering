@@ -3,6 +3,7 @@ from gensim.models.coherencemodel import CoherenceModel
 from pprint import pprint
 from Word2Vec import *
 from abc import ABC, abstractmethod
+import pickle
 
 
 class TopicModel(ABC):
@@ -20,11 +21,13 @@ class TopicModel(ABC):
 
     def __save_dictionary(self):
         dictionary_path = self.folder_path + "dataset.dict"
-        self.dictionary.save(dictionary_path)
+        pickle_save(self.dictionary, dictionary_path)
+        print("__save_dictionary")
 
     def __save_tfidf_model(self):
-        tfidf_path = self.folder_path + "dataset.tfidf_model"
-        self.tfidf.save(tfidf_path)
+        tfidf_path = self.folder_path + "new_dataset.tfidf_model"
+        pickle_save(self.tfidf, tfidf_path)
+        print("__save_tfidf_model")
 
     def __save_topic_model(self, model):
         model_path = self.folder_path + self.algorithm + '/model/' + self.algorithm + '.model'
@@ -65,7 +68,6 @@ class TopicModel(ABC):
     def search_num_of_topics(self):
         coherence_scores = []
         for i in range(self.max_num_topics):
-            print(i)
             model = self.get_model(i + 1)
             cm = CoherenceModel(model=model, texts=self.dataset,
                                 corpus=self.corpus_tfidf, coherence='c_v')
@@ -124,6 +126,10 @@ def save_coherence_plot(max_num_topics, coherence_scores, figure_path):
     plt.tight_layout()
     plt.savefig(figure_path)
     plt.show()
+
+
+def pickle_save(my_model, file_name):
+    pickle.dump(my_model, open(file_name, 'wb'))
 
 
 def main():
