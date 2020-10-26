@@ -15,13 +15,14 @@ def plot_distribution(df, plot_path, col):
     plt.savefig(plot_path)
 
 
-def word2vec_trainer(df, size, model_path):
+def word2vec_trainer(df, model_path, size=70):
     list_of_tokens = list(df["description"])
     start_time = time.time()
     model = Word2Vec([literal_eval(x) for x in list_of_tokens],
                      min_count=1, size=size, workers=3, window=3, sg=1)
     print("Time taken to train the word2vec model: " + str(time.time() - start_time))
     model.save(model_path)
+    write_w2vec_vectors('.'.join(model_path.split(".")[:-1])+'_w2v_vectors.csv', df, model, size)
 
 
 def write_w2vec_vectors(word2vec_filename, df, w2v_model, w2v_vector_size):
@@ -45,9 +46,9 @@ def main():
     conf = toml.load('config.toml')
     df = pd.read_csv(conf["preprocessed_data_path"])
     model_path = conf['model_path']
-    word2vec_trainer(df, 60, model_path)
-    #w2v_model = Word2Vec.load(model_path)
-    #write_w2vec_vectors(model_path+'w2vec_vectors.csv', df, w2v_model, 60)
+    word2vec_trainer(df, model_path, 60)
+    # w2v_model = Word2Vec.load(model_path)
+    # write_w2vec_vectors(model_path+'w2vec_vectors.csv', df, w2v_model, 60)
 
 
 if __name__ == "__main__":
