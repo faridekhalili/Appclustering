@@ -1,7 +1,7 @@
 import gensim
 from gensim.models.coherencemodel import CoherenceModel
 from pprint import pprint
-from Categorization.Word2Vec import *
+from Word2Vec import *
 from abc import ABC, abstractmethod
 
 

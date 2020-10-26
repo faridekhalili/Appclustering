@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from gensim.models import Word2Vec
+from ast import literal_eval
 
 
 def plot_distribution(df, plot_path, col):
@@ -15,8 +16,9 @@ def plot_distribution(df, plot_path, col):
 
 
 def word2vec_trainer(df, size, model_path):
+    list_of_tokens = list(df["description"])
     start_time = time.time()
-    model = Word2Vec(list(df["description"]),
+    model = Word2Vec([literal_eval(x) for x in list_of_tokens],
                      min_count=1, size=size, workers=3, window=3, sg=1)
     print("Time taken to train the word2vec model: " + str(time.time() - start_time))
     model.save(model_path)
@@ -25,7 +27,7 @@ def word2vec_trainer(df, size, model_path):
 def write_w2vec_vectors(word2vec_filename, df, w2v_model, w2v_vector_size):
     with open(word2vec_filename, 'w+') as word2vec_file:
         for index, row in df.iterrows():
-            model_vector = (np.mean([w2v_model[token] for token in row['description']], axis=0)).tolist()
+            model_vector = (np.mean([w2v_model[token] for token in literal_eval(row['description'])], axis=0)).tolist()
             if index == 0:
                 header = ",".join(str(ele) for ele in range(w2v_vector_size))
                 word2vec_file.write(header)
@@ -40,10 +42,12 @@ def write_w2vec_vectors(word2vec_filename, df, w2v_model, w2v_vector_size):
 
 
 def main():
-    conf = toml.load('../config-temp.toml')
-    df = pd.read_csv('../' + conf["preprocessed_data_path"])
-    model_path = '../' + conf['model_path']
+    conf = toml.load('config.toml')
+    df = pd.read_csv(conf["preprocessed_data_path"])
+    model_path = conf['model_path']
     word2vec_trainer(df, 60, model_path)
+    #w2v_model = Word2Vec.load(model_path)
+    #write_w2vec_vectors(model_path+'w2vec_vectors.csv', df, w2v_model, 60)
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-from Categorization.Word2Vec import *
+from Word2Vec import *
 
 
 def gp_cluster(df, model_path):

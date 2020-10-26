@@ -1,5 +1,4 @@
 import ssl
-
 import toml
 import re
 import string
