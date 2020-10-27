@@ -22,14 +22,12 @@ class TopicModel(ABC):
     def __save_dictionary(self):
         dictionary_path = self.folder_path + "dataset.dict"
         pickle_save(self.dictionary, dictionary_path)
-        print("__save_dictionary")
 
     def __save_tfidf_model(self):
         tfidf_path = self.folder_path + "new_dataset.tfidf_model"
         pickle_save(self.tfidf, tfidf_path)
-        print("__save_tfidf_model")
 
-    def __save_topic_model(self, model):
+    def save_topic_model(self, model):
         model_path = self.folder_path + self.algorithm + '/model/' + self.algorithm + '.model'
         model.save(model_path)
 
@@ -75,7 +73,7 @@ class TopicModel(ABC):
         best_num_topics = coherence_scores.index(max(coherence_scores)) + 1
         best_model = self.get_model(best_num_topics)
         pprint(best_model.print_topics())
-        self.__save_topic_model(best_model)
+        self.save_topic_model(best_model)
         self.__plot_coherence_scores(coherence_scores)
         return best_model
 
@@ -95,9 +93,11 @@ class LSA(TopicModel):
         super().__init__(dataset, folder_path, algorithm)
 
     def get_model(self, num_topics):
+        start_time = time.time()
         lsa_model = gensim.models.LsiModel(self.corpus_tfidf,
                                            num_topics=num_topics,
                                            id2word=self.dictionary)
+        print("Time taken to train the lda model: " + str(time.time() - start_time))
         return lsa_model
 
 
@@ -112,8 +112,21 @@ class LDA(TopicModel):
                                                num_topics=num_topics,
                                                id2word=self.dictionary,
                                                passes=4, workers=10, iterations=100)
-        print("Time taken to train the word2vec model: " + str(time.time() - start_time))
+        print("Time taken to train the lda model: " + str(time.time() - start_time))
         return lda_model
+
+
+class HDP(TopicModel):
+
+    def __init__(self, dataset, folder_path, algorithm: str):
+        super().__init__(dataset, folder_path, algorithm)
+
+    def get_model(self):
+        start_time = time.time()
+        hdp_model = gensim.models.hdpmodel.HdpModel(corpus=self.corpus_tfidf, id2word=self.dictionary)
+        print("Time taken to train the hdp model: " + str(time.time() - start_time))
+        self.save_topic_model(hdp_model)
+        return hdp_model
 
 
 def save_coherence_plot(max_num_topics, coherence_scores, figure_path):
@@ -140,12 +153,15 @@ def main():
 
     lsa_obj = LSA(texts, topic_modeling_path, "lsa")
     best_lsa_model = lsa_obj.search_num_of_topics()
-    #lsa_obj.save_dict_and_tfidf()
-    #lsa_obj.divide_into_clusters(best_lsa_model)
+    # lsa_obj.save_dict_and_tfidf()
+    # lsa_obj.divide_into_clusters(best_lsa_model)
 
     lda_obj = LDA(texts, topic_modeling_path, "lda")
     best_lda_model = lda_obj.search_num_of_topics()
-    #lda_obj.divide_into_clusters(best_lda_model)
+    # lda_obj.divide_into_clusters(best_lda_model)
+
+    hdp_obj = HDP(texts, topic_modeling_path, "hdp")
+    hdp_model = hdp_obj.get_model()
 
 
 if __name__ == "__main__":
