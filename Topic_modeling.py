@@ -27,10 +27,6 @@ class TopicModel(ABC):
         tfidf_path = self.folder_path + "new_dataset.tfidf_model"
         pickle_save(self.tfidf, tfidf_path)
 
-    def save_topic_model(self, model):
-        model_path = self.folder_path + self.algorithm + '/model/' + self.algorithm + '.model'
-        model.save(model_path)
-
     def __plot_coherence_scores(self, coherence_scores):
         figure_path = self.folder_path + self.algorithm + '/' + self.algorithm + '_coherence.png'
         save_coherence_plot(self.max_num_topics, coherence_scores, figure_path)
@@ -59,6 +55,10 @@ class TopicModel(ABC):
             model_name = word2vec_models_path + str(count) + ".model"
             word2vec_trainer(df=df_category, model_path=model_name)
 
+    def save_topic_model(self, model):
+        model_path = self.folder_path + self.algorithm + '/model/' + self.algorithm + '.model'
+        model.save(model_path)
+
     def save_dict_and_tfidf(self):
         self.__save_dictionary()
         self.__save_tfidf_model()
@@ -81,6 +81,18 @@ class TopicModel(ABC):
         topic_clusters = self.__extract_dominant_topics(best_model)
         extended_df = pd.DataFrame(list(zip(self.dataset, topic_clusters)), columns=['description', 'topic'])
         self.__extract_word2vec_models(extended_df)
+
+    def topic_prob_extractor(self, model):
+        shown_topics = model.print_topics(num_topics=150, num_words=500)
+        topics_nos = [x[0] for x in shown_topics]
+        weights = [sum([float(item.split("*")[0]) for item in shown_topics[topicN][1].split("+")]) for topicN in
+                   topics_nos]
+        df = pd.DataFrame({'topic_id': topics_nos, 'weight': weights})
+        index_names = df[df['weight'] == 0.0].index
+        df.drop(index_names, inplace=True)
+        topic_wight_df_path = self.folder_path + self.algorithm + '/topic_wight_df.csv'
+        df.to_csv(topic_wight_df_path)
+        return df
 
     @abstractmethod
     def get_model(self, num_topics):
@@ -126,6 +138,7 @@ class HDP(TopicModel):
         hdp_model = gensim.models.hdpmodel.HdpModel(corpus=self.corpus_tfidf, id2word=self.dictionary)
         print("Time taken to train the hdp model: " + str(time.time() - start_time))
         self.save_topic_model(hdp_model)
+        self.topic_prob_extractor.topic_prob_extractor(hdp_model)
         return hdp_model
 
 
