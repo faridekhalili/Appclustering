@@ -140,12 +140,12 @@ def main():
 
     lsa_obj = LSA(texts, topic_modeling_path, "lsa")
     best_lsa_model = lsa_obj.search_num_of_topics()
-    lsa_obj.save_dict_and_tfidf()
-    lsa_obj.divide_into_clusters(best_lsa_model)
+    #lsa_obj.save_dict_and_tfidf()
+    #lsa_obj.divide_into_clusters(best_lsa_model)
 
-    lsa_obj = LDA(texts, topic_modeling_path, "lda")
-    best_lda_model = lsa_obj.search_num_of_topics()
-    lsa_obj.divide_into_clusters(best_lda_model)
+    lda_obj = LDA(texts, topic_modeling_path, "lda")
+    best_lda_model = lda_obj.search_num_of_topics()
+    #lda_obj.divide_into_clusters(best_lda_model)
 
 
 if __name__ == "__main__":

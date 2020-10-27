@@ -62,14 +62,14 @@ def pre_process(data):
 
 
 def main():
-    conf = toml.load('../config-temp.toml')
+    conf = toml.load('config.toml')
     # Read sqlite query results into a pandas DataFrame
-    con = sqlite3.connect('../' + conf['database_path'])
+    con = sqlite3.connect(conf['database_path'])
     df = pd.read_sql_query("SELECT * from app", con)
     con.close()
     df = df.loc[:, ['description', 'category']]
     df["description"] = pre_process(df[['description']])
-    df.to_csv('../' + conf['preprocessed_data_path'])
+    df.to_csv(conf['preprocessed_data_path'])
 
 
 if __name__ == "__main__":
