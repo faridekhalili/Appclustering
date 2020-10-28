@@ -1,7 +1,7 @@
 import gensim
 from gensim.models.coherencemodel import CoherenceModel
 from pprint import pprint
-from Word2Vec import *
+from word2vec import *
 from abc import ABC, abstractmethod
 import pickle
 

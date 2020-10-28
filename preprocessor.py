@@ -49,16 +49,16 @@ def remove_unusual_char(input_str):
 
 
 def pre_process(data):
-    lower_data = data.applymap(lambda s: s.lower())
-    removed_number_data = lower_data.applymap(lambda s: re.sub(r'\d+', '', s))
-    removed_punctuation_data = removed_number_data.applymap(lambda s: remove_punctuation(s))
-    striped_data = removed_punctuation_data.applymap(lambda s: s.strip())
-    removed_extra_white_space = striped_data.applymap(lambda s: ' '.join(s.split()))
-    removed_stop_words = removed_extra_white_space.applymap(lambda s: remove_stop_words(s))
-    lemmatized_data = removed_stop_words.applymap(lambda s: lemmatizing(s))
-    removed_unusual_char = lemmatized_data.applymap(lambda s: remove_unusual_char(s))
-    tokenized_data = removed_unusual_char.applymap(lambda s: word_tokenize(s))
-    return tokenized_data
+    processing_data = data.applymap(lambda s: s.lower())
+    processing_data = processing_data.applymap(lambda s: re.sub(r'\d+', '', s))
+    processing_data = processing_data.applymap(lambda s: remove_punctuation(s))
+    processing_data = processing_data.applymap(lambda s: s.strip())
+    processing_data = processing_data.applymap(lambda s: ' '.join(s.split()))
+    processing_data = processing_data.applymap(lambda s: remove_stop_words(s))
+    processing_data = processing_data.applymap(lambda s: lemmatizing(s))
+    processing_data = processing_data.applymap(lambda s: remove_unusual_char(s))
+    processing_data = processing_data.applymap(lambda s: word_tokenize(s))
+    return processing_data
 
 
 def main():
