@@ -7,7 +7,7 @@ import pickle
 
 
 class TopicModel(ABC):
-    def __init__(self, dataset, folder_path, algorithm: str):
+    def __init__(self, dataset, folder_path, algorithm):
         self.max_num_topics = 100
         self.dataset = dataset
         self.folder_path = folder_path
@@ -50,10 +50,15 @@ class TopicModel(ABC):
         plot_distribution(df, distribution_plot_path, 'topic')
         count = 0
         word2vec_models_path = self.folder_path + self.algorithm + '/word2vec_models/'
+        start_all_time = time.time()
         for category, df_category in df.groupby('topic'):
+            start_time = time.time()
             count += 1
             model_name = word2vec_models_path + str(count) + ".model"
             word2vec_trainer(df=df_category, model_path=model_name)
+            print("Time taken to train the word2vec model: " + str(time.time() - start_time) + '\n')
+        print("Time taken to train all the word2vec models: " + str(time.time() - start_all_time) + '\n')
+        print(80*"#")
 
     def save_topic_model(self, model):
         model_path = self.folder_path + self.algorithm + '/model/' + self.algorithm + '.model'
@@ -101,7 +106,7 @@ class TopicModel(ABC):
 
 class LSA(TopicModel):
 
-    def __init__(self, dataset, folder_path, algorithm: str):
+    def __init__(self, dataset, folder_path, algorithm):
         super().__init__(dataset, folder_path, algorithm)
 
     def get_model(self, num_topics):
@@ -109,13 +114,13 @@ class LSA(TopicModel):
         lsa_model = gensim.models.LsiModel(self.corpus_tfidf,
                                            num_topics=num_topics,
                                            id2word=self.dictionary)
-        print("Time taken to train the lda model: " + str(time.time() - start_time))
+        print("Time taken to train the lsa model: " + str(time.time() - start_time)+'\n')
         return lsa_model
 
 
 class LDA(TopicModel):
 
-    def __init__(self, dataset, folder_path, algorithm: str):
+    def __init__(self, dataset, folder_path, algorithm):
         super().__init__(dataset, folder_path, algorithm)
 
     def get_model(self, num_topics):
@@ -124,19 +129,20 @@ class LDA(TopicModel):
                                                num_topics=num_topics,
                                                id2word=self.dictionary,
                                                passes=4, workers=10, iterations=100)
-        print("Time taken to train the lda model: " + str(time.time() - start_time))
+        print("Time taken to train the lda model: " + str(time.time() - start_time)+'\n')
         return lda_model
 
 
 class HDP(TopicModel):
 
-    def __init__(self, dataset, folder_path, algorithm: str):
+    def __init__(self, dataset, folder_path, algorithm):
         super().__init__(dataset, folder_path, algorithm)
 
     def get_model(self):
         start_time = time.time()
         hdp_model = gensim.models.hdpmodel.HdpModel(corpus=self.corpus_tfidf, id2word=self.dictionary)
-        print("Time taken to train the hdp model: " + str(time.time() - start_time))
+        pprint(best_model.print_topics(num_words=10))
+        print("Time taken to train the hdp model: " + str(time.time() - start_time)+'\n')
         self.save_topic_model(hdp_model)
         self.topic_prob_extractor.topic_prob_extractor(hdp_model)
         return hdp_model
@@ -159,19 +165,20 @@ def pickle_save(my_model, file_name):
 
 
 def main():
+    sys.stdout = open("./output/timings.txt", "w")
     conf = toml.load('config.toml')
     topic_modeling_path = conf['topic_modeling_path']
     df = pd.read_csv(conf["preprocessed_data_path"])
     texts = [literal_eval(x) for x in list(df["description"])]
 
     lsa_obj = LSA(texts, topic_modeling_path, "lsa")
+    lsa_obj.save_dict_and_tfidf()
     best_lsa_model = lsa_obj.search_num_of_topics()
-    # lsa_obj.save_dict_and_tfidf()
-    # lsa_obj.divide_into_clusters(best_lsa_model)
+    lsa_obj.divide_into_clusters(best_lsa_model)
 
     lda_obj = LDA(texts, topic_modeling_path, "lda")
     best_lda_model = lda_obj.search_num_of_topics()
-    # lda_obj.divide_into_clusters(best_lda_model)
+    lda_obj.divide_into_clusters(best_lda_model)
 
     hdp_obj = HDP(texts, topic_modeling_path, "hdp")
     hdp_model = hdp_obj.get_model()
