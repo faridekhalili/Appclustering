@@ -13,7 +13,7 @@ with open("./output/timings.txt", "w") as f:
 
 class TopicModel(ABC):
     def __init__(self, dataset, folder_path, algorithm):
-        print(init)
+        print("init")
         self.max_num_topics = 100
         self.dataset = dataset
         self.folder_path = folder_path
@@ -193,8 +193,12 @@ def pickle_save(my_model, file_name):
 def main():
     conf = toml.load('config.toml')
     topic_modeling_path = conf['topic_modeling_path']
+    print("reading df")
     df = pd.read_csv(conf["preprocessed_data_path"])
+    print("df read")
     texts = [literal_eval(x) for x in list(df["description"])]
+    print("texts created")
+    del df
 
     lsa_obj = LSA(texts, topic_modeling_path, "lsa")
     lsa_obj.save_dict_and_tfidf()
