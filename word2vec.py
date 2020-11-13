@@ -29,7 +29,7 @@ def word2vec_trainer(df, model_path, size=70):
 def write_w2vec_vectors(word2vec_filename, df, w2v_model, w2v_vector_size):
     with open(word2vec_filename, 'w+') as word2vec_file:
         for index, row in df.iterrows():
-            model_vector = (np.mean([w2v_model[token] for token in literal_eval(row['description'])], axis=0)).tolist()
+            model_vector = np.mean([w2v_model[token] for token in row['description']], axis=0).tolist()
             if index == 0:
                 header = ",".join(str(ele) for ele in range(w2v_vector_size))
                 word2vec_file.write(header)

@@ -5,11 +5,6 @@ from word2vec import *
 from abc import ABC, abstractmethod
 import pickle
 
-with open("./output/timings.txt", "w") as f:
-    sys.stdout = f
-    print('This message will be written to a file.')
-    sys.stdout = original_stdout
-
 
 class TopicModel(ABC):
     def __init__(self, dataset, folder_path, algorithm):
@@ -35,7 +30,7 @@ class TopicModel(ABC):
         print("__save_dictionary")
 
     def __save_tfidf_model(self):
-        tfidf_path = self.folder_path + "new_dataset.tfidf_model"
+        tfidf_path = self.folder_path + "dataset.tfidf_model"
         pickle_save(self.tfidf, tfidf_path)
         print("__save_tfidf_model")
 
@@ -59,7 +54,6 @@ class TopicModel(ABC):
         return topic_clusters
 
     def __extract_word2vec_models(self, df):
-        sys.stdout = f
         distribution_plot_path = self.folder_path + self.algorithm + '/topic_distribution.png'
         plot_distribution(df, distribution_plot_path, 'topic')
         count = 0
@@ -70,10 +64,9 @@ class TopicModel(ABC):
             count += 1
             model_name = word2vec_models_path + str(count) + ".model"
             word2vec_trainer(df=df_category, model_path=model_name)
-            print("Time taken to train the word2vec model: " + str(time.time() - start_time) + '\n')
-        print("Time taken to train all the word2vec models: " + str(time.time() - start_all_time) + '\n')
-        print(80 * "#")
-        sys.stdout = original_stdout
+            write_to_file("Time taken to train the word2vec model: " + str(time.time() - start_time) + '\n')
+        write_to_file("Time taken to train all the word2vec models: " + str(time.time() - start_all_time) + '\n')
+        write_to_file(80 * "#")
 
     def save_topic_model(self, model):
         model_path = self.folder_path + self.algorithm + '/model/' + self.algorithm + '.model'
@@ -88,12 +81,16 @@ class TopicModel(ABC):
     def search_num_of_topics(self):
         coherence_scores = []
         for i in range(self.max_num_topics):
+            print(i)
             model = self.get_model(i + 1)
             cm = CoherenceModel(model=model, texts=self.dataset,
                                 corpus=self.corpus_tfidf, coherence='c_v')
             coherence_scores.append(cm.get_coherence())
         best_num_topics = coherence_scores.index(max(coherence_scores)) + 1
+        print("best_num_topics: "+str(best_num_topics))
         best_model = self.get_model(best_num_topics)
+        print("best_model retrieved")
+        write_to_file(str(best_model.print_topics()))
         pprint(best_model.print_topics())
         self.save_topic_model(best_model)
         self.__plot_coherence_scores(coherence_scores)
@@ -134,9 +131,7 @@ class LSA(TopicModel):
         lsa_model = gensim.models.LsiModel(self.corpus_tfidf,
                                            num_topics=num_topics,
                                            id2word=self.dictionary)
-        sys.stdout = f
-        print("Time taken to train the lsa model: " + str(time.time() - start_time) + '\n')
-        sys.stdout = original_stdout
+        write_to_file("Time taken to train the lsa model: " + str(time.time() - start_time) + '\n')
         return lsa_model
 
 
@@ -151,9 +146,7 @@ class LDA(TopicModel):
                                                num_topics=num_topics,
                                                id2word=self.dictionary,
                                                passes=4, workers=10, iterations=100)
-        sys.stdout = f
-        print("Time taken to train the lda model: " + str(time.time() - start_time) + '\n')
-        sys.stdout = original_stdout
+        write_to_file("Time taken to train the lda model: " + str(time.time() - start_time) + '\n')
         return lda_model
 
 
@@ -165,10 +158,9 @@ class HDP(TopicModel):
     def get_model(self):
         start_time = time.time()
         hdp_model = gensim.models.hdpmodel.HdpModel(corpus=self.corpus_tfidf, id2word=self.dictionary)
+        write_to_file(str(best_model.print_topics(num_words=10)))
         pprint(best_model.print_topics(num_words=10))
-        sys.stdout = f
-        print("Time taken to train the hdp model: " + str(time.time() - start_time) + '\n')
-        sys.stdout = original_stdout
+        write_to_file("Time taken to train the hdp model: " + str(time.time() - start_time) + '\n')
         self.save_topic_model(hdp_model)
         self.topic_prob_extractor.topic_prob_extractor(hdp_model)
         return hdp_model
@@ -188,6 +180,11 @@ def save_coherence_plot(max_num_topics, coherence_scores, figure_path):
 
 def pickle_save(my_model, file_name):
     pickle.dump(my_model, open(file_name, 'wb'))
+
+
+def write_to_file(message):
+    f = open('./output/topic_modeling/timings.txt', 'a')
+    f.write(message)
 
 
 def main():
