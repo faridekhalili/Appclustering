@@ -33,7 +33,7 @@ hdp_model_path = topic_modeling_path + 'hdp/model/hdp.model'
 topic_weight_df_path = topic_modeling_path + 'hdp/topic_wight_df.csv'
 topic_wight_df = pd.read_csv(topic_weight_df_path)
 hdp_model = HdpModel.load(hdp_model_path)
-shown_topics = hdp_model.print_topics(num_topics=150, num_words=10)
+shown_topics = hdp_model.print_topics(num_topics=len(topic_wight_df), num_words=10)
 print(100 * "#", file=open(test_models_result_path, "a"))
 print("examples of topics retrieved using HDP: \n", file=open(test_models_result_path, "a"))
 for i in range(3):

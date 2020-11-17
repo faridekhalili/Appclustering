@@ -1,4 +1,4 @@
-from Word2Vec import *
+from word2vec import *
 
 
 def gp_cluster(df, model_path):

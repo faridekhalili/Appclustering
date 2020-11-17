@@ -27,7 +27,7 @@ def write_result(some_list, filename):
             f.write("%s\n" % item)
 
 
-def get_dominant_topic(new_docs, dictionary, tfidf, topic_model, models_path) -> list:
+def get_dominant_topic(new_docs, dictionary, tfidf, topic_model, models_path):
     word2vec_model_list = []
     for doc in list(new_docs):
         vec_bow = dictionary.doc2bow(doc)
@@ -42,7 +42,7 @@ def get_dominant_topic(new_docs, dictionary, tfidf, topic_model, models_path) ->
     return word2vec_model_list
 
 
-def get_best_word2vec_model(algorithm: str, new_docs: list, path: str) -> list:
+def get_best_word2vec_model(algorithm, new_docs, path):
     dictionary = pickle_load(path + "dataset.dict")
     tfidf = pickle_load(path + "dataset.tfidf_model")
 
@@ -62,6 +62,13 @@ def get_best_word2vec_model(algorithm: str, new_docs: list, path: str) -> list:
         word2vec_models_path = path + 'lsa/word2vec_models/'
         word2vec_model_list = get_dominant_topic(new_preprocessed_docs,
                                                  dictionary, tfidf, lsa_model,
+                                                 word2vec_models_path)
+    elif algorithm == "hdp":
+        model_path = path + 'hdp/model/hdp.model'
+        hdp_model = pickle_load(model_path)
+        word2vec_models_path = path + 'hdp/word2vec_models/'
+        word2vec_model_list = get_dominant_topic(new_preprocessed_docs,
+                                                 dictionary, tfidf, hdp_model,
                                                  word2vec_models_path)
     return word2vec_model_list
 
