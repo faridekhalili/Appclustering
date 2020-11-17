@@ -174,7 +174,7 @@ class HDP(TopicModel):
 def save_coherence_plot(max_num_topics, coherence_scores, figure_path):
     x = [i + 1 for i in [20, 30]]
     # x = [i + 1 for i in range(max_num_topics)]
-    plt.figure(figsize=(10, 5))z
+    plt.figure(figsize=(10, 5))
     plt.plot(x, coherence_scores)
     plt.xticks(np.arange(min(x), max(x) + 1, 1.0))
     plt.xlabel('Number of topics')
