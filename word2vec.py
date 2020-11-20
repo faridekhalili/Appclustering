@@ -13,8 +13,8 @@ from utils import *
 def plot_distribution(df, plot_path, col):
     plt.figure(figsize=(15, 5))
     pd.value_counts(df[col]).plot.bar(title="category distribution in the dataset")
-    plt.xlabel("category")
-    plt.ylabel("Number of applications in the dataset")
+    plt.xlabel("Topic")
+    plt.ylabel("Number of applications in the topic")
     plt.savefig(plot_path)
 
 
