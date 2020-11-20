@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from gensim.models import Word2Vec
 from ast import literal_eval
+from utils import *
 
 
 def plot_distribution(df, plot_path, col):
@@ -21,15 +22,15 @@ def word2vec_trainer(df, model_path, size=70):
         list_of_tokens = [literal_eval(x) for x in list_of_tokens]
     start_time = time.time()
     model = Word2Vec(list_of_tokens, min_count=1, size=size, workers=3, window=3, sg=1)
-    print("Time taken to train the word2vec model: " + str(int((time.time()-start_time)/60))+' minutes\n')
+    print("Time taken to train the word2vec model: " + str(int((time.time() - start_time) / 60)) + ' minutes\n')
     model.save(model_path)
-    write_w2vec_vectors('.'.join(model_path.split(".")[:-1])+'_w2v_vectors.csv', df, model, size)
+    write_w2vec_vectors('.'.join(model_path.split(".")[:-1]) + '_w2v_vectors.csv', df, model, size)
 
 
 def write_w2vec_vectors(word2vec_filename, df, w2v_model, w2v_vector_size):
     with open(word2vec_filename, 'w+') as word2vec_file:
         for index, row in df.iterrows():
-            model_vector = np.mean([w2v_model[token] for token in row['description']], axis=0).tolist()
+            model_vector = np.mean([w2v_model.wv[token] for token in literal_eval(row['description'])], axis=0).tolist()
             if index == 0:
                 header = ",".join(str(ele) for ele in range(w2v_vector_size))
                 word2vec_file.write(header)
@@ -43,13 +44,33 @@ def write_w2vec_vectors(word2vec_filename, df, w2v_model, w2v_vector_size):
             word2vec_file.write('\n')
 
 
+def extract_word2vec_models(folder_path, algorithm):
+    distribution_plot_path = folder_path + algorithm + '/topic_distribution.png'
+    extended_df = pd.read_csv(folder_path + algorithm + '/labeled.csv')
+    plot_distribution(extended_df, distribution_plot_path, 'topic')
+    count = 0
+    word2vec_models_path = folder_path + algorithm + '/word2vec_models/'
+    start_all_time = time.time()
+    for category, df_category in extended_df.groupby('topic'):
+        start_time = time.time()
+        count += 1
+        model_name = word2vec_models_path + str(count) + ".model"
+        word2vec_trainer(df=df_category, model_path=model_name)
+        write_to_file(
+            "Time taken to train the " + str(count) + "th word2vec model resulting from " + str(algorithm) + ": " + str(
+                int((time.time() - start_time) / 60)) + ' minutes\n')
+    write_to_file("Time taken to train all the word2vec models: " + str(
+        int((time.time() - start_all_time) / 60)) + ' minutes\n\n')
+    write_to_file(80 * "#" + '\n\n')
+    print("extract_word2vec_models")
+
+
 def main():
     conf = toml.load('config.toml')
-    df = pd.read_csv(conf["preprocessed_data_path"])
-    model_path = conf['model_path']
-    word2vec_trainer(df, model_path, 60)
-    # w2v_model = Word2Vec.load(model_path)
-    # write_w2vec_vectors(model_path+'w2vec_vectors.csv', df, w2v_model, 60)
+    topic_modeling_path = conf['topic_modeling_path']
+    extract_word2vec_models(topic_modeling_path, "lsa")
+    extract_word2vec_models(topic_modeling_path, "lda")
+    extract_word2vec_models(topic_modeling_path, "hdp")
 
 
 if __name__ == "__main__":

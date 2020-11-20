@@ -1,4 +1,3 @@
-model_path = './output/word2vec.model'
 topic_modeling_path = './output/topic_modeling/'
 google_play_model_path = './output/google_play_categories/models/'
 database_path = './input/total-v1.db'

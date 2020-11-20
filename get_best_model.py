@@ -16,11 +16,6 @@ def retrieve_w2v_model(model_path):
         return test_w2v_model
 
 
-def pickle_load(file_name):
-    loaded_model = pickle.load(open(file_name, 'rb'))
-    return loaded_model
-
-
 def write_result(some_list, filename):
     with open(filename, 'w') as f:
         for item in some_list:
@@ -43,8 +38,8 @@ def get_dominant_topic(new_docs, dictionary, tfidf, topic_model, models_path):
 
 
 def get_best_word2vec_model(algorithm, new_docs, path):
-    dictionary = pickle_load(path + "dataset.dict")
-    tfidf = pickle_load(path + "dataset.tfidf_model")
+    dictionary = pickle.load(open(path + "dataset.dict", 'rb'))
+    tfidf = pickle.load(open(path + "dataset.tfidf_model", 'rb'))
 
     df = pd.DataFrame(new_docs, columns=["description"])
     df["description"] = pre_process(df[['description']])
@@ -65,7 +60,7 @@ def get_best_word2vec_model(algorithm, new_docs, path):
                                                  word2vec_models_path)
     elif algorithm == "hdp":
         model_path = path + 'hdp/model/hdp.model'
-        hdp_model = pickle_load(model_path)
+        hdp_model = pickle.load(open(model_path, 'rb'))
         word2vec_models_path = path + 'hdp/word2vec_models/'
         word2vec_model_list = get_dominant_topic(new_preprocessed_docs,
                                                  dictionary, tfidf, hdp_model,
@@ -87,7 +82,7 @@ def main():
     write_result(lda_word2vec_model_list, test_result_path + 'lda_results.txt')
 
     # an example of how we can retrieve the word2vec model of a given test data (say test_df[0])
-    test_w2v_model= retrieve_w2v_model(lsa_word2vec_model_list[0])
+    test_w2v_model = retrieve_w2v_model(lsa_word2vec_model_list[0])
 
 
 if __name__ == "__main__":

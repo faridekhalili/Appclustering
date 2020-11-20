@@ -1,19 +1,24 @@
+import toml
+import time
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
 import gensim
 from gensim.models.coherencemodel import CoherenceModel
 from pprint import pprint
-from word2vec import *
+from utils import *
 from abc import ABC, abstractmethod
+from ast import literal_eval
 import pickle
 
 
 class TopicModel(ABC):
     def __init__(self, dataset, folder_path, algorithm):
-        self.num_topics = list(range(1, 101, 10))
+        self.num_topics = list(range(1, 21, 10))
         self.dataset = dataset
         self.folder_path = folder_path
         self.algorithm = algorithm
-        self.dictionary = pickle_load(folder_path + "dataset.dict")
-        self.corpus_tfidf = pickle_load(folder_path + "tfidf_corpus")
+        self.dictionary, self.corpus_tfidf = load_dictionary_and_tfidf_corpus(dataset, folder_path)
         print("init done")
         super().__init__()
 
@@ -35,24 +40,6 @@ class TopicModel(ABC):
         self.dataset = [i for j, i in enumerate(self.dataset) if j not in remove_indices]
         print("__extract_dominant_topics")
         return topic_clusters
-
-    def __extract_word2vec_models(self, df):
-        distribution_plot_path = self.folder_path + self.algorithm + '/topic_distribution.png'
-        plot_distribution(df, distribution_plot_path, 'topic')
-        count = 0
-        word2vec_models_path = self.folder_path + self.algorithm + '/word2vec_models/'
-        start_all_time = time.time()
-        for category, df_category in df.groupby('topic'):
-            start_time = time.time()
-            count += 1
-            model_name = word2vec_models_path + str(count) + ".model"
-            word2vec_trainer(df=df_category, model_path=model_name)
-            write_to_file(
-                "Time taken to train the word2vec model: " + str(int((time.time() - start_time) / 60)) + ' minutes\n')
-        write_to_file("Time taken to train all the word2vec models: " + str(
-            int((time.time() - start_time) / 60)) + ' minutes\n\n')
-        write_to_file(80 * "#" + '\n\n')
-        print("__extract_word2vec_models")
 
     def save_topic_model(self, model):
         model_path = self.folder_path + self.algorithm + '/model/' + self.algorithm + '.model'
@@ -81,7 +68,7 @@ class TopicModel(ABC):
     def divide_into_clusters(self, best_model):
         topic_clusters = self.__extract_dominant_topics(best_model)
         extended_df = pd.DataFrame(list(zip(self.dataset, topic_clusters)), columns=['description', 'topic'])
-        self.__extract_word2vec_models(extended_df)
+        extended_df.to_csv(self.folder_path + self.algorithm + '/labeled.csv')
         print("divide_into_clusters")
 
     def topic_prob_extractor(self, model):
@@ -164,34 +151,22 @@ def save_coherence_plot(num_topics, coherence_scores, figure_path):
     plt.close()
 
 
-def pickle_save(my_model, file_name):
-    pickle.dump(my_model, open(file_name, 'wb'))
-
-
-def pickle_load(file_name):
-    loaded_obj = pickle.load(open(file_name, 'rb'))
-    return loaded_obj
-
-
-def write_to_file(message):
-    f = open('./output/topic_modeling/timings.txt', 'a')
-    f.write(message)
-
-
-def extract_tfidf_corpus(dataset, folder_path):
+def load_dictionary_and_tfidf_corpus(dataset, folder_path):
     dictionary_path = folder_path + "dataset.dict"
     tfidf_path = folder_path + "dataset.tfidf_model"
     tfidf_corpus_path = folder_path + "tfidf_corpus"
-    dictionary = gensim.corpora.Dictionary(dataset)
-    pickle_save(dictionary, dictionary_path)
-    print("dictionary created and stored")
-    bow_corpus = [dictionary.doc2bow(doc) for doc in dataset]
-    tfidf = gensim.models.TfidfModel(bow_corpus)
-    pickle_save(tfidf, tfidf_path)
-    print("tfidf model created and stored")
-    corpus_tfidf = tfidf[bow_corpus]
-    pickle_save(corpus_tfidf, tfidf_corpus_path)
-    print("tfidf_corpus created and stored")
+    try:
+        dictionary = pickle.load(open(dictionary_path, "rb"))
+        corpus_tfidf = pickle.load(open(tfidf_corpus_path, "rb"))
+    except (OSError, IOError) as e:
+        dictionary = gensim.corpora.Dictionary(dataset)
+        pickle.dump(dictionary, open(dictionary_path, "wb"))
+        bow_corpus = [dictionary.doc2bow(doc) for doc in dataset]
+        tfidf = gensim.models.TfidfModel(bow_corpus)
+        pickle.dump(tfidf, open(tfidf_path, "wb"))
+        corpus_tfidf = tfidf[bow_corpus]
+        pickle.dump(corpus_tfidf, open(tfidf_corpus_path, "wb"))
+    return dictionary, corpus_tfidf
 
 
 def main():
