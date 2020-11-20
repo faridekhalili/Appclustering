@@ -33,7 +33,7 @@ class TopicModel(ABC):
         file_name = self.folder_path + self.algorithm + '/' + \
                     str(self.num_topics[0]) + "_" + \
                     str(self.num_topics[1] - self.num_topics[0]) + "_" + \
-                    str(self.num_topics[-1]) + "csv"
+                    str(self.num_topics[-1]) + ".csv"
         coherence_scores = []
         for i in self.num_topics:
             print(i)

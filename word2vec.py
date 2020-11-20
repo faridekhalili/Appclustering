@@ -2,9 +2,11 @@ import toml
 import time
 import pandas as pd
 import numpy as np
+import warnings
 import matplotlib.pyplot as plt
 from gensim.models import Word2Vec
 from ast import literal_eval
+import argparse
 from utils import *
 
 
@@ -30,7 +32,9 @@ def word2vec_trainer(df, model_path, size=70):
 def write_w2vec_vectors(word2vec_filename, df, w2v_model, w2v_vector_size):
     with open(word2vec_filename, 'w+') as word2vec_file:
         for index, row in df.iterrows():
-            model_vector = np.mean([w2v_model.wv[token] for token in literal_eval(row['description'])], axis=0).tolist()
+            warnings.simplefilter("ignore", category=RuntimeWarning)
+            model_vector = np.nanmean([w2v_model.wv[token] for token in literal_eval(row['description'])],
+                                      axis=0).tolist()
             if index == 0:
                 header = ",".join(str(ele) for ele in range(w2v_vector_size))
                 word2vec_file.write(header)
@@ -68,9 +72,31 @@ def extract_word2vec_models(folder_path, algorithm):
 def main():
     conf = toml.load('config.toml')
     topic_modeling_path = conf['topic_modeling_path']
-    extract_word2vec_models(topic_modeling_path, "lsa")
-    extract_word2vec_models(topic_modeling_path, "lda")
-    extract_word2vec_models(topic_modeling_path, "hdp")
+    parser = argparse.ArgumentParser(description='Topic modeling software')
+    parser.add_argument("--modelNumbers", nargs="*")
+    parser.add_argument('--algorithm', dest='algorithm', type=str, help='topic modeling algorithm')
+    args = parser.parse_args()
+
+    if args.modelNumbers is None or args.algorithm is None:
+        print("hum")
+        extract_word2vec_models(topic_modeling_path, "lsa")
+        extract_word2vec_models(topic_modeling_path, "lda")
+        extract_word2vec_models(topic_modeling_path, "hdp")
+    else:
+        model_path = topic_modeling_path + args.algorithm
+        extended_df = pd.read_csv(model_path + '/labeled.csv')
+        for model_number in args.modelNumbers:
+            if int(model_number) > extended_df["topic"].max():
+                print("Sorry there is no category " + model_number + " created from the " + args.algorithm)
+                continue
+            start_time = time.time()
+            model_name = model_path + "/word2vec_models/" + model_number + ".model"
+            df_category = extended_df.loc[extended_df['topic'] == int(model_number)]
+            word2vec_trainer(df=df_category, model_path=model_name)
+            timing_log = "Time taken to train the " + model_number + \
+                         "th word2vec model resulting from " + str(args.algorithm) + ": " + \
+                         str(int((time.time() - start_time) / 60)) + ' minutes\n'
+            write_to_file(timing_log)
 
 
 if __name__ == "__main__":
