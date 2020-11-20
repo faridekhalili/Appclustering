@@ -1,20 +1,19 @@
+import argparse
 import toml
 import time
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import gensim
 from gensim.models.coherencemodel import CoherenceModel
 from pprint import pprint
 from utils import *
 from abc import ABC, abstractmethod
 from ast import literal_eval
-import pickle
 
 
 class TopicModel(ABC):
-    def __init__(self, dataset, folder_path, algorithm):
-        self.num_topics = list(range(1, 21, 10))
+    def __init__(self, dataset, folder_path, algorithm, min_topics, max_topics, step):
+        self.num_topics = list(range(min_topics, max_topics, step))
         self.dataset = dataset
         self.folder_path = folder_path
         self.algorithm = algorithm
@@ -23,30 +22,18 @@ class TopicModel(ABC):
         super().__init__()
 
     def __plot_coherence_scores(self, coherence_scores):
-        figure_path = self.folder_path + self.algorithm + '/' + self.algorithm + '_coherence.png'
+        png_name = str(self.num_topics[0]) + "_" + \
+                   str(self.num_topics[1] - self.num_topics[0]) + "_" + \
+                   str(self.num_topics[-1])
+        figure_path = self.folder_path + self.algorithm + '/' + png_name + '_coherence.png'
         save_coherence_plot(self.num_topics, coherence_scores, figure_path)
         print("__plot_coherence_scores")
 
-    def __extract_dominant_topics(self, best_model):
-        topic_clusters = []
-        remove_indices = []
-        for i in range(len(self.corpus_tfidf)):
-            if len(best_model[self.corpus_tfidf[i]]) == 0:
-                remove_indices.append(i)
-            else:
-                topic_distribution = dict(best_model[self.corpus_tfidf[i]])
-                dominant_topic = max(topic_distribution, key=topic_distribution.get)
-                topic_clusters.append(dominant_topic)
-        self.dataset = [i for j, i in enumerate(self.dataset) if j not in remove_indices]
-        print("__extract_dominant_topics")
-        return topic_clusters
-
-    def save_topic_model(self, model):
-        model_path = self.folder_path + self.algorithm + '/model/' + self.algorithm + '.model'
-        model.save(model_path)
-        print("save_topic_model")
-
     def search_num_of_topics(self):
+        file_name = self.folder_path + self.algorithm + '/' + \
+                    str(self.num_topics[0]) + "_" + \
+                    str(self.num_topics[1] - self.num_topics[0]) + "_" + \
+                    str(self.num_topics[-1]) + "csv"
         coherence_scores = []
         for i in self.num_topics:
             print(i)
@@ -54,22 +41,13 @@ class TopicModel(ABC):
             cm = CoherenceModel(model=model, texts=self.dataset,
                                 corpus=self.corpus_tfidf, coherence='c_v')
             coherence_scores.append(cm.get_coherence())
-        best_num_topics = self.num_topics[coherence_scores.index(max(coherence_scores))]
-        print("best_num_topics: " + str(best_num_topics))
-        best_model = self.get_model(best_num_topics)
-        print("best_model retrieved")
-        write_to_file('\n\n' + str(best_model.print_topics()) + '\n\n')
-        pprint(best_model.print_topics())
-        self.save_topic_model(best_model)
+        coherence_scores_df = pd.DataFrame(
+            {'num_topics': self.num_topics,
+             'coherence_scores': coherence_scores,
+             })
+        coherence_scores_df.to_csv(file_name)
         self.__plot_coherence_scores(coherence_scores)
         print("search_num_of_topics")
-        return best_model
-
-    def divide_into_clusters(self, best_model):
-        topic_clusters = self.__extract_dominant_topics(best_model)
-        extended_df = pd.DataFrame(list(zip(self.dataset, topic_clusters)), columns=['description', 'topic'])
-        extended_df.to_csv(self.folder_path + self.algorithm + '/labeled.csv')
-        print("divide_into_clusters")
 
     def topic_prob_extractor(self, model):
         shown_topics = model.print_topics(num_topics=150, num_words=500)
@@ -91,8 +69,8 @@ class TopicModel(ABC):
 
 class LSA(TopicModel):
 
-    def __init__(self, dataset, folder_path, algorithm):
-        super().__init__(dataset, folder_path, algorithm)
+    def __init__(self, dataset, folder_path, algorithm, min_topics=1, max_topics=101, step=10):
+        super().__init__(dataset, folder_path, algorithm, min_topics, max_topics, step)
 
     def get_model(self, num_topics):
         start_time = time.time()
@@ -108,8 +86,8 @@ class LSA(TopicModel):
 
 class LDA(TopicModel):
 
-    def __init__(self, dataset, folder_path, algorithm):
-        super().__init__(dataset, folder_path, algorithm)
+    def __init__(self, dataset, folder_path, algorithm, min_topics=1, max_topics=101, step=10):
+        super().__init__(dataset, folder_path, algorithm, min_topics, max_topics, step)
 
     def get_model(self, num_topics):
         start_time = time.time()
@@ -126,8 +104,8 @@ class LDA(TopicModel):
 
 class HDP(TopicModel):
 
-    def __init__(self, dataset, folder_path, algorithm):
-        super().__init__(dataset, folder_path, algorithm)
+    def __init__(self, dataset, folder_path, algorithm, min_topics=1, max_topics=101, step=10):
+        super().__init__(dataset, folder_path, algorithm, min_topics, max_topics, step)
 
     def get_model(self):
         start_time = time.time()
@@ -136,7 +114,8 @@ class HDP(TopicModel):
         pprint(hdp_model.print_topics(num_words=10))
         print("training time of HDP model: " + str(int((time.time() - start_time) / 60)) + ' minutes\n')
         write_to_file("Time taken to train the hdp model: " + str(int((time.time() - start_time) / 60)) + ' minutes\n')
-        self.save_topic_model(hdp_model)
+        model_path = self.folder_path + self.algorithm + '/model/' + self.algorithm + '.model'
+        hdp_model.save(model_path)
         return hdp_model
 
 
@@ -151,25 +130,13 @@ def save_coherence_plot(num_topics, coherence_scores, figure_path):
     plt.close()
 
 
-def load_dictionary_and_tfidf_corpus(dataset, folder_path):
-    dictionary_path = folder_path + "dataset.dict"
-    tfidf_path = folder_path + "dataset.tfidf_model"
-    tfidf_corpus_path = folder_path + "tfidf_corpus"
-    try:
-        dictionary = pickle.load(open(dictionary_path, "rb"))
-        corpus_tfidf = pickle.load(open(tfidf_corpus_path, "rb"))
-    except (OSError, IOError) as e:
-        dictionary = gensim.corpora.Dictionary(dataset)
-        pickle.dump(dictionary, open(dictionary_path, "wb"))
-        bow_corpus = [dictionary.doc2bow(doc) for doc in dataset]
-        tfidf = gensim.models.TfidfModel(bow_corpus)
-        pickle.dump(tfidf, open(tfidf_path, "wb"))
-        corpus_tfidf = tfidf[bow_corpus]
-        pickle.dump(corpus_tfidf, open(tfidf_corpus_path, "wb"))
-    return dictionary, corpus_tfidf
-
-
 def main():
+    parser = argparse.ArgumentParser(description='Topic modeling software')
+    parser.add_argument('--min', dest='min_topics', type=int, help='min number of topics')
+    parser.add_argument('--max', dest='max_topics', type=int, help='max number of topics')
+    parser.add_argument('--step', dest='step_topics', type=int, help='step to increment')
+    args = parser.parse_args()
+
     conf = toml.load('config.toml')
     topic_modeling_path = conf['topic_modeling_path']
     print("reading df")
@@ -179,23 +146,22 @@ def main():
     print("texts created")
     del df
 
-    lsa_obj = LSA(texts, topic_modeling_path, "lsa")
+    lsa_obj = LSA(texts, topic_modeling_path, "lsa", args.min_topics, args.max_topics, args.step_topics)
     # del texts
-    best_lsa_model = lsa_obj.search_num_of_topics()
-    lsa_obj.divide_into_clusters(best_lsa_model)
+    lsa_obj.search_num_of_topics()
     del lsa_obj
 
-    lda_obj = LDA(texts, topic_modeling_path, "lda")
+    lda_obj = LDA(texts, topic_modeling_path, "lda",
+                  args.min_topics, args.max_topics, args.step_topics)
     # del texts
-    best_lda_model = lda_obj.search_num_of_topics()
-    lda_obj.divide_into_clusters(best_lda_model)
+    lda_obj.search_num_of_topics()
     del lda_obj
 
-    hdp_obj = HDP(texts, topic_modeling_path, "hdp")
+    hdp_obj = HDP(texts, topic_modeling_path, "hdp",
+                  args.min_topics, args.max_topics, args.step_topics)
     del texts
     hdp_model = hdp_obj.get_model()
     hdp_obj.topic_prob_extractor(hdp_model)
-    hdp_obj.divide_into_clusters(hdp_model)
     del hdp_obj
 
 
