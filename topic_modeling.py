@@ -132,6 +132,7 @@ def save_coherence_plot(num_topics, coherence_scores, figure_path):
 
 def main():
     parser = argparse.ArgumentParser(description='Topic modeling software')
+    parser.add_argument('--algorithm', dest='algorithm', type=str, help='topic modeling algorithm')
     parser.add_argument('--min', dest='min_topics', type=int, help='min number of topics')
     parser.add_argument('--max', dest='max_topics', type=int, help='max number of topics')
     parser.add_argument('--step', dest='step_topics', type=int, help='step to increment')
@@ -141,28 +142,36 @@ def main():
     topic_modeling_path = conf['topic_modeling_path']
     print("reading df")
     df = pd.read_csv(conf["preprocessed_data_path"])
+    empty_description_indices = df[df["description"] == '[]'].index
+    print(len(df))
+    df.drop(empty_description_indices, inplace=True)
+    print(len(df))
     print("df read")
     texts = [literal_eval(x) for x in list(df["description"])]
     print("texts created")
     del df
 
-    lsa_obj = LSA(texts, topic_modeling_path, "lsa", args.min_topics, args.max_topics, args.step_topics)
-    # del texts
-    lsa_obj.search_num_of_topics()
-    del lsa_obj
+    if args.algorithm == "lsa":
+        lsa_obj = LSA(texts, topic_modeling_path, "lsa", args.min_topics, args.max_topics, args.step_topics)
+        del texts
 
-    lda_obj = LDA(texts, topic_modeling_path, "lda",
-                  args.min_topics, args.max_topics, args.step_topics)
-    # del texts
-    lda_obj.search_num_of_topics()
-    del lda_obj
+        lsa_obj.search_num_of_topics()
+        del lsa_obj
 
-    hdp_obj = HDP(texts, topic_modeling_path, "hdp",
-                  args.min_topics, args.max_topics, args.step_topics)
-    del texts
-    hdp_model = hdp_obj.get_model()
-    hdp_obj.topic_prob_extractor(hdp_model)
-    del hdp_obj
+    elif args.algorithm == "lsa":
+        lda_obj = LDA(texts, topic_modeling_path, "lda",
+                      args.min_topics, args.max_topics, args.step_topics)
+        del texts
+        lda_obj.search_num_of_topics()
+        del lda_obj
+
+    elif args.algorithm == "hdp":
+        hdp_obj = HDP(texts, topic_modeling_path, "hdp",
+                      args.min_topics, args.max_topics, args.step_topics)
+        del texts
+        hdp_model = hdp_obj.get_model()
+        hdp_obj.topic_prob_extractor(hdp_model)
+        del hdp_obj
 
 
 if __name__ == "__main__":

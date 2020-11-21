@@ -5,6 +5,7 @@ import argparse
 import glob
 from utils import *
 from pprint import pprint
+import sqlite3
 
 
 def save_topic_model(model, folder_path, algorithm):
@@ -15,29 +16,27 @@ def save_topic_model(model, folder_path, algorithm):
 
 def extract_dominant_topics(model, dataset, folder_path):
     topic_clusters = []
-    remove_indices = []
     dictionary, corpus_tfidf = load_dictionary_and_tfidf_corpus(dataset, folder_path)
     for i in range(len(corpus_tfidf)):
-        if len(model[corpus_tfidf[i]]) == 0:
-            remove_indices.append(i)
-        else:
-            topic_distribution = dict(model[corpus_tfidf[i]])
-            dominant_topic = max(topic_distribution, key=topic_distribution.get)
-            topic_clusters.append(dominant_topic)
-    dataset = [i for j, i in enumerate(dataset) if j not in remove_indices]
+        topic_distribution = dict(model[corpus_tfidf[i]])
+        dominant_topic = max(topic_distribution, key=topic_distribution.get)
+        topic_clusters.append(dominant_topic)
     print("__extract_dominant_topics")
     return topic_clusters
 
 
-def divide_into_clusters(model, dataset, folder_path, algorithm):
-    topic_clusters = extract_dominant_topics(model, dataset, folder_path)
-    extended_df = pd.DataFrame(list(zip(dataset, topic_clusters)), columns=['description', 'topic'])
+def divide_into_clusters(model, df, app_id_list, folder_path, algorithm):
+    texts = [literal_eval(x) for x in list(df["description"])]
+    topic_clusters = extract_dominant_topics(model, texts, folder_path)
+    extended_df = pd.DataFrame(list(zip(texts, topic_clusters, list(df["category"]), app_id_list)),
+                               columns=['description', 'topic', 'category', 'app_id'])
     extended_df.to_csv(folder_path + algorithm + '/labeled.csv')
     print("divide_into_clusters")
 
 
-def get_best_topic_model(dataset, folder_path, algorithm):
-    dictionary, corpus_tfidf = load_dictionary_and_tfidf_corpus(dataset, folder_path)
+def get_best_topic_model(df, folder_path, algorithm):
+    texts = [literal_eval(x) for x in list(df["description"])]
+    dictionary, corpus_tfidf = load_dictionary_and_tfidf_corpus(texts, folder_path)
     path = folder_path + algorithm
     all_files = glob.glob(path + "/*.csv")
     li = []
@@ -67,24 +66,28 @@ def main():
 
     conf = toml.load('config.toml')
     topic_modeling_path = conf['topic_modeling_path']
-    print("reading df")
+
     df = pd.read_csv(conf["preprocessed_data_path"])
-    print("df read")
-    texts = [literal_eval(x) for x in list(df["description"])]
-    print("texts created")
-    del df
+    empty_description_indices = df[df["description"] == '[]'].index
+    df.drop(empty_description_indices, inplace=True)
+
+    con = sqlite3.connect(conf['database_path'])
+    original_df = pd.read_sql_query("SELECT * from app", con)
+    original_df.drop(empty_description_indices, inplace=True)
+    app_id_list = list(original_df["app_id"])
+    del original_df
 
     if args.algorithm == "hdp":
         model_path = topic_modeling_path + 'hdp/model/hdp.model'
         hdp_model = pickle.load(open(model_path, 'rb'))
-        divide_into_clusters(hdp_model, texts, topic_modeling_path, args.algorithm)
+        divide_into_clusters(hdp_model, df, app_id_list, topic_modeling_path, args.algorithm)
     else:
-        model = get_best_topic_model(texts, topic_modeling_path, args.algorithm)
-        write_to_file(args.algorithm+" topics : \n\n")
+        model = get_best_topic_model(df, topic_modeling_path, args.algorithm)
+        write_to_file(args.algorithm + " topics : \n\n")
         write_to_file('\n\n' + str(model.print_topics()) + '\n\n')
         pprint(model.print_topics())
         save_topic_model(model, topic_modeling_path, args.algorithm)
-        divide_into_clusters(model, texts, topic_modeling_path, args.algorithm)
+        divide_into_clusters(model, df, app_id_list, topic_modeling_path, args.algorithm)
 
 
 if __name__ == "__main__":
