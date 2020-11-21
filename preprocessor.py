@@ -67,8 +67,9 @@ def main():
     con = sqlite3.connect(conf['database_path'])
     df = pd.read_sql_query("SELECT * from app", con)
     con.close()
-    df = df.loc[:, ['description', 'category']]
     df["description"] = pre_process(df[['description']])
+    df = df[df['description'].map(lambda d: len(d)) > 0]
+    df.dropna(subset=["description"], inplace=True)
     df.to_csv(conf['preprocessed_data_path'])
 
 

@@ -142,10 +142,6 @@ def main():
     topic_modeling_path = conf['topic_modeling_path']
     print("reading df")
     df = pd.read_csv(conf["preprocessed_data_path"])
-    empty_description_indices = df[df["description"] == '[]'].index
-    print(len(df))
-    df.drop(empty_description_indices, inplace=True)
-    print(len(df))
     print("df read")
     texts = [literal_eval(x) for x in list(df["description"])]
     print("texts created")

@@ -5,12 +5,11 @@ import argparse
 import glob
 from utils import *
 from pprint import pprint
-import sqlite3
 
 
 def save_topic_model(model, folder_path, algorithm):
     model_path = folder_path + algorithm + '/model/' + algorithm + '.model'
-    model.save(model_path)
+    pickle.dump(model, open(model_path, 'wb'))
     print("save_topic_model")
 
 
@@ -25,10 +24,10 @@ def extract_dominant_topics(model, dataset, folder_path):
     return topic_clusters
 
 
-def divide_into_clusters(model, df, app_id_list, folder_path, algorithm):
+def divide_into_clusters(model, df, folder_path, algorithm):
     texts = [literal_eval(x) for x in list(df["description"])]
     topic_clusters = extract_dominant_topics(model, texts, folder_path)
-    extended_df = pd.DataFrame(list(zip(texts, topic_clusters, list(df["category"]), app_id_list)),
+    extended_df = pd.DataFrame(list(zip(texts, topic_clusters, list(df["category"]), list(df["app_id"]))),
                                columns=['description', 'topic', 'category', 'app_id'])
     extended_df.to_csv(folder_path + algorithm + '/labeled.csv')
     print("divide_into_clusters")
@@ -68,26 +67,18 @@ def main():
     topic_modeling_path = conf['topic_modeling_path']
 
     df = pd.read_csv(conf["preprocessed_data_path"])
-    empty_description_indices = df[df["description"] == '[]'].index
-    df.drop(empty_description_indices, inplace=True)
-
-    con = sqlite3.connect(conf['database_path'])
-    original_df = pd.read_sql_query("SELECT * from app", con)
-    original_df.drop(empty_description_indices, inplace=True)
-    app_id_list = list(original_df["app_id"])
-    del original_df
 
     if args.algorithm == "hdp":
         model_path = topic_modeling_path + 'hdp/model/hdp.model'
         hdp_model = pickle.load(open(model_path, 'rb'))
-        divide_into_clusters(hdp_model, df, app_id_list, topic_modeling_path, args.algorithm)
+        divide_into_clusters(hdp_model, df, topic_modeling_path, args.algorithm)
     else:
         model = get_best_topic_model(df, topic_modeling_path, args.algorithm)
         write_to_file(args.algorithm + " topics : \n\n")
         write_to_file('\n\n' + str(model.print_topics()) + '\n\n')
         pprint(model.print_topics())
         save_topic_model(model, topic_modeling_path, args.algorithm)
-        divide_into_clusters(model, df, app_id_list, topic_modeling_path, args.algorithm)
+        divide_into_clusters(model, df, topic_modeling_path, args.algorithm)
 
 
 if __name__ == "__main__":
