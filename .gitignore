@@ -5,3 +5,4 @@ venv
 input/total-v1.db
 input
 output
+.ipynb_checkpoints

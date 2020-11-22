@@ -3,19 +3,13 @@ import time
 import pandas as pd
 import numpy as np
 import warnings
-import matplotlib.pyplot as plt
 from gensim.models import Word2Vec
 from ast import literal_eval
 import argparse
 from utils import *
 
 
-def plot_distribution(df, plot_path, col):
-    plt.figure(figsize=(15, 5))
-    pd.value_counts(df[col]).plot.bar(title="category distribution in the dataset")
-    plt.xlabel("Topic")
-    plt.ylabel("Number of applications in the topic")
-    plt.savefig(plot_path)
+
 
 
 def word2vec_trainer(df, model_path, size=70):
@@ -49,9 +43,7 @@ def write_w2vec_vectors(word2vec_filename, df, w2v_model, w2v_vector_size):
 
 
 def extract_word2vec_models(folder_path, algorithm):
-    distribution_plot_path = folder_path + algorithm + '/topic_distribution.png'
     extended_df = pd.read_csv(folder_path + algorithm + '/labeled.csv')
-    plot_distribution(extended_df, distribution_plot_path, 'topic')
     count = 0
     word2vec_models_path = folder_path + algorithm + '/word2vec_models/'
     start_all_time = time.time()
@@ -76,9 +68,10 @@ def main():
     parser.add_argument("--modelNumbers", nargs="*")
     parser.add_argument('--algorithm', dest='algorithm', type=str, help='topic modeling algorithm')
     args = parser.parse_args()
-
+    if args.algorithm is None:
+        print('set algorithm first')
+        return
     if args.modelNumbers is None or args.algorithm is None:
-        print("hum")
         extract_word2vec_models(topic_modeling_path, "lsa")
         extract_word2vec_models(topic_modeling_path, "lda")
         extract_word2vec_models(topic_modeling_path, "hdp")

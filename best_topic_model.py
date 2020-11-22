@@ -3,8 +3,11 @@ from ast import literal_eval
 import toml
 import argparse
 import glob
+
+from topic_modeling import save_coherence_plot
 from utils import *
 from pprint import pprint
+import matplotlib.pyplot as plt
 
 
 def save_topic_model(model, folder_path, algorithm):
@@ -27,8 +30,8 @@ def extract_dominant_topics(model, dataset, folder_path):
 def divide_into_clusters(model, df, folder_path, algorithm):
     texts = [literal_eval(x) for x in list(df["description"])]
     topic_clusters = extract_dominant_topics(model, texts, folder_path)
-    extended_df = pd.DataFrame(list(zip(texts, topic_clusters, list(df["category"]), list(df["app_id"]))),
-                               columns=['description', 'topic', 'category', 'app_id'])
+    extended_df = pd.DataFrame(list(zip(texts, topic_clusters, list(df["category"]))),
+                               columns=['description', 'topic', 'category'])
     extended_df.to_csv(folder_path + algorithm + '/labeled.csv')
     print("divide_into_clusters")
 
@@ -36,16 +39,8 @@ def divide_into_clusters(model, df, folder_path, algorithm):
 def get_best_topic_model(df, folder_path, algorithm):
     texts = [literal_eval(x) for x in list(df["description"])]
     dictionary, corpus_tfidf = load_dictionary_and_tfidf_corpus(texts, folder_path)
-    path = folder_path + algorithm
-    all_files = glob.glob(path + "/*.csv")
-    li = []
-    for filename in all_files:
-        df = pd.read_csv(filename, index_col=None, header=0)
-        li.append(df)
-    frame = pd.concat(li, axis=0, ignore_index=True)
-    frame.drop(columns=['Unnamed: 0'])
-    best_number_topics = frame.iloc[frame['coherence_scores'].argmax()]["num_topics"]
-    print("best_model retrieved")
+    best_number_topics = get_optimal_number_from_cv(algorithm, folder_path)
+    print("best_model retrieved: " + str(best_number_topics))
     if algorithm == "lda":
         model = gensim.models.LdaMulticore(corpus_tfidf,
                                            num_topics=best_number_topics,
@@ -56,6 +51,29 @@ def get_best_topic_model(df, folder_path, algorithm):
                                        num_topics=best_number_topics,
                                        id2word=dictionary)
     return model
+
+
+def get_optimal_number_from_cv(algorithm, folder_path):
+    path = folder_path + algorithm
+    all_files = glob.glob(path + "/*.csv")  # todo here is a bug. it also considers labeled
+    li = []
+    for filename in all_files:
+        df = pd.read_csv(filename, index_col=None, header=0)
+        li.append(df)
+    df = pd.concat(li, axis=0, ignore_index=True)
+    df.drop(columns=['Unnamed: 0'], inplace=True)
+    best_number_topics = df.iloc[df['coherence_scores'].argmax()]["num_topics"]
+    df.sort_values(by=['num_topics'], inplace=True)
+    save_coherence_plot(list(df['num_topics']), list(df['coherence_scores']), path+'/overall_cv.png')
+    return best_number_topics
+
+
+def plot_distribution(df, plot_path, col):
+    plt.figure(figsize=(15, 5))
+    pd.value_counts(df[col]).plot.bar(title="category distribution in the dataset")
+    plt.xlabel("Topic")
+    plt.ylabel("Number of applications in the topic")
+    plt.savefig(plot_path)
 
 
 def main():
@@ -79,6 +97,10 @@ def main():
         pprint(model.print_topics())
         save_topic_model(model, topic_modeling_path, args.algorithm)
         divide_into_clusters(model, df, topic_modeling_path, args.algorithm)
+
+    distribution_plot_path = topic_modeling_path + args.algorithm + '/topic_distribution.png'
+    extended_df = pd.read_csv(topic_modeling_path + args.algorithm + '/labeled.csv')
+    plot_distribution(extended_df, distribution_plot_path, 'topic')
 
 
 if __name__ == "__main__":

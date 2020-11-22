@@ -11,6 +11,21 @@ from abc import ABC, abstractmethod
 from ast import literal_eval
 
 
+def get_args():
+    parser = argparse.ArgumentParser(description='Topic modeling software')
+    parser.add_argument('--algorithm', dest='algorithm', type=str, help='topic modeling algorithm')
+    parser.add_argument('--min', dest='min_topics', type=int, help='min number of topics')
+    parser.add_argument('--max', dest='max_topics', type=int, help='max number of topics')
+    parser.add_argument('--step', dest='step_topics', type=int, help='step to increment')
+    args = parser.parse_args()
+    return args
+
+
+def get_range_file_name():
+    args = get_args()
+    return '_'.join([str(args.min_topics), str(args.max_topics), str(args.step_topics)])
+
+
 class TopicModel(ABC):
     def __init__(self, dataset, folder_path, algorithm, min_topics, max_topics, step):
         self.num_topics = list(range(min_topics, max_topics, step))
@@ -22,18 +37,15 @@ class TopicModel(ABC):
         super().__init__()
 
     def __plot_coherence_scores(self, coherence_scores):
-        png_name = str(self.num_topics[0]) + "_" + \
-                   str(self.num_topics[1] - self.num_topics[0]) + "_" + \
-                   str(self.num_topics[-1])
+        if len(self.num_topics) < 2:
+            return
+        png_name = get_range_file_name()
         figure_path = self.folder_path + self.algorithm + '/' + png_name + '_coherence.png'
         save_coherence_plot(self.num_topics, coherence_scores, figure_path)
         print("__plot_coherence_scores")
 
-    def search_num_of_topics(self):
-        file_name = self.folder_path + self.algorithm + '/' + \
-                    str(self.num_topics[0]) + "_" + \
-                    str(self.num_topics[1] - self.num_topics[0]) + "_" + \
-                    str(self.num_topics[-1]) + ".csv"
+    def create_models(self):
+        file_name = self.folder_path + self.algorithm + '/' +get_range_file_name() + ".csv"
         coherence_scores = []
         for i in self.num_topics:
             print(i)
@@ -47,7 +59,7 @@ class TopicModel(ABC):
              })
         coherence_scores_df.to_csv(file_name)
         self.__plot_coherence_scores(coherence_scores)
-        print("search_num_of_topics")
+        print("models created")
 
     def topic_prob_extractor(self, model):
         shown_topics = model.print_topics(num_topics=150, num_words=500)
@@ -122,7 +134,7 @@ class HDP(TopicModel):
 def save_coherence_plot(num_topics, coherence_scores, figure_path):
     plt.figure(figsize=(10, 5))
     plt.plot(num_topics, coherence_scores)
-    plt.xticks(np.arange(min(num_topics), max(num_topics) + 1, num_topics[1] - num_topics[0]))
+    # plt.xticks(np.arange(min(num_topics), max(num_topics) + 1, num_topics[1] - num_topics[0]))
     plt.xlabel('Number of topics')
     plt.ylabel('Coherence score')
     plt.tight_layout()
@@ -131,13 +143,7 @@ def save_coherence_plot(num_topics, coherence_scores, figure_path):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Topic modeling software')
-    parser.add_argument('--algorithm', dest='algorithm', type=str, help='topic modeling algorithm')
-    parser.add_argument('--min', dest='min_topics', type=int, help='min number of topics')
-    parser.add_argument('--max', dest='max_topics', type=int, help='max number of topics')
-    parser.add_argument('--step', dest='step_topics', type=int, help='step to increment')
-    args = parser.parse_args()
-
+    args = get_args()
     conf = toml.load('config.toml')
     topic_modeling_path = conf['topic_modeling_path']
     print("reading df")
@@ -146,19 +152,20 @@ def main():
     texts = [literal_eval(x) for x in list(df["description"])]
     print("texts created")
     del df
-
+    # todo use factory method
     if args.algorithm == "lsa":
+        # todo number of inputs are too much
         lsa_obj = LSA(texts, topic_modeling_path, "lsa", args.min_topics, args.max_topics, args.step_topics)
         del texts
 
-        lsa_obj.search_num_of_topics()
+        lsa_obj.create_models()
         del lsa_obj
 
-    elif args.algorithm == "lsa":
+    elif args.algorithm == "lda":
         lda_obj = LDA(texts, topic_modeling_path, "lda",
                       args.min_topics, args.max_topics, args.step_topics)
         del texts
-        lda_obj.search_num_of_topics()
+        lda_obj.create_models()
         del lda_obj
 
     elif args.algorithm == "hdp":
