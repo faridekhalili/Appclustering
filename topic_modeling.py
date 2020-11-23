@@ -169,8 +169,7 @@ def main():
         del lda_obj
 
     elif args.algorithm == "hdp":
-        hdp_obj = HDP(texts, topic_modeling_path, "hdp",
-                      args.min_topics, args.max_topics, args.step_topics)
+        hdp_obj = HDP(texts, topic_modeling_path, "hdp")
         del texts
         hdp_model = hdp_obj.get_model()
         hdp_obj.topic_prob_extractor(hdp_model)
