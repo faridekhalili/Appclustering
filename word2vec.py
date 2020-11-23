@@ -9,9 +9,6 @@ import argparse
 from utils import *
 
 
-
-
-
 def word2vec_trainer(df, model_path, size=70):
     list_of_tokens = list(df["description"])
     if isinstance(list_of_tokens[0], str):
@@ -20,26 +17,6 @@ def word2vec_trainer(df, model_path, size=70):
     model = Word2Vec(list_of_tokens, min_count=1, size=size, workers=3, window=3, sg=1)
     print("Time taken to train the word2vec model: " + str(int((time.time() - start_time) / 60)) + ' minutes\n')
     model.save(model_path)
-    write_w2vec_vectors('.'.join(model_path.split(".")[:-1]) + '_w2v_vectors.csv', df, model, size)
-
-
-def write_w2vec_vectors(word2vec_filename, df, w2v_model, w2v_vector_size):
-    with open(word2vec_filename, 'w+') as word2vec_file:
-        for index, row in df.iterrows():
-            warnings.simplefilter("ignore", category=RuntimeWarning)
-            model_vector = np.nanmean([w2v_model.wv[token] for token in literal_eval(row['description'])],
-                                      axis=0).tolist()
-            if index == 0:
-                header = ",".join(str(ele) for ele in range(w2v_vector_size))
-                word2vec_file.write(header)
-                word2vec_file.write("\n")
-            # Check if the line exists else it is vector of zeros
-            if type(model_vector) is list:
-                line1 = ",".join([str(vector_element) for vector_element in model_vector])
-            else:
-                line1 = ",".join([str(0) for i in range(w2v_vector_size)])
-            word2vec_file.write(line1)
-            word2vec_file.write('\n')
 
 
 def extract_word2vec_models(folder_path, algorithm):

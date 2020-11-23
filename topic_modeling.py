@@ -136,7 +136,6 @@ class HDP():
 def save_coherence_plot(num_topics, coherence_scores, figure_path):
     plt.figure(figsize=(10, 5))
     plt.plot(num_topics, coherence_scores)
-    # plt.xticks(np.arange(min(num_topics), max(num_topics) + 1, num_topics[1] - num_topics[0]))
     plt.xlabel('Number of topics')
     plt.ylabel('Coherence score')
     plt.tight_layout()
@@ -154,14 +153,10 @@ def main():
     texts = [literal_eval(x) for x in list(df["description"])]
     print("texts created")
     del df
-    print(type(args))
-    d = vars(args)
-    print(d)
     # todo use factory method
     if args.algorithm == "lsa":
         lsa_obj = LSA(texts, topic_modeling_path, "lsa", args)
         del texts
-
         lsa_obj.create_models()
         del lsa_obj
 
