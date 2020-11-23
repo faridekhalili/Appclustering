@@ -27,8 +27,8 @@ def get_range_file_name():
 
 
 class TopicModel(ABC):
-    def __init__(self, dataset, folder_path, algorithm, min_topics, max_topics, step):
-        self.num_topics = list(range(min_topics, max_topics, step))
+    def __init__(self, dataset, folder_path, algorithm, args):
+        self.num_topics = list(range(args.min_topics, args.max_topics, args.step_topics))
         self.dataset = dataset
         self.folder_path = folder_path
         self.algorithm = algorithm
@@ -45,7 +45,7 @@ class TopicModel(ABC):
         print("__plot_coherence_scores")
 
     def create_models(self):
-        file_name = self.folder_path + self.algorithm + '/' +get_range_file_name() + ".csv"
+        file_name = self.folder_path + self.algorithm + '/' + get_range_file_name() + ".csv"
         coherence_scores = []
         for i in self.num_topics:
             print(i)
@@ -60,19 +60,6 @@ class TopicModel(ABC):
         coherence_scores_df.to_csv(file_name)
         self.__plot_coherence_scores(coherence_scores)
         print("models created")
-
-    def topic_prob_extractor(self, model):
-        shown_topics = model.print_topics(num_topics=150, num_words=500)
-        topics_nos = [x[0] for x in shown_topics]
-        weights = [sum([float(item.split("*")[0]) for item in shown_topics[topicN][1].split("+")]) for topicN in
-                   topics_nos]
-        df = pd.DataFrame({'topic_id': topics_nos, 'weight': weights})
-        index_names = df[df['weight'] == 0.0].index
-        df.drop(index_names, inplace=True)
-        topic_wight_df_path = self.folder_path + self.algorithm + '/topic_wight_df.csv'
-        df.to_csv(topic_wight_df_path)
-        print("topic_prob_extractor")
-        return df
 
     @abstractmethod
     def get_model(self, num_topics):
@@ -98,9 +85,6 @@ class LSA(TopicModel):
 
 class LDA(TopicModel):
 
-    def __init__(self, dataset, folder_path, algorithm, min_topics=1, max_topics=101, step=10):
-        super().__init__(dataset, folder_path, algorithm, min_topics, max_topics, step)
-
     def get_model(self, num_topics):
         start_time = time.time()
         lda_model = gensim.models.LdaMulticore(self.corpus_tfidf,
@@ -114,21 +98,39 @@ class LDA(TopicModel):
         return lda_model
 
 
-class HDP(TopicModel):
+class HDP():
 
-    def __init__(self, dataset, folder_path, algorithm, min_topics=1, max_topics=101, step=10):
-        super().__init__(dataset, folder_path, algorithm, min_topics, max_topics, step)
+    def __init__(self, dataset, folder_path, algorithm):
+        self.dataset = dataset
+        self.folder_path = folder_path
+        self.algorithm = algorithm
+        self.dictionary, self.corpus_tfidf = load_dictionary_and_tfidf_corpus(dataset, folder_path)
+        print("init done")
+        super().__init__()
 
     def get_model(self):
         start_time = time.time()
+        model_path = self.folder_path + self.algorithm + '/model/' + self.algorithm + '.model'
         hdp_model = gensim.models.hdpmodel.HdpModel(corpus=self.corpus_tfidf, id2word=self.dictionary)
         write_to_file('\n\n' + str(hdp_model.print_topics(num_words=10)) + '\n\n')
         pprint(hdp_model.print_topics(num_words=10))
         print("training time of HDP model: " + str(int((time.time() - start_time) / 60)) + ' minutes\n')
         write_to_file("Time taken to train the hdp model: " + str(int((time.time() - start_time) / 60)) + ' minutes\n')
-        model_path = self.folder_path + self.algorithm + '/model/' + self.algorithm + '.model'
-        hdp_model.save(model_path)
+        pickle.dump(hdp_model, open(model_path, 'wb'))
         return hdp_model
+
+    def topic_prob_extractor(self, model):
+        shown_topics = model.print_topics(num_topics=150, num_words=500)
+        topics_nos = [x[0] for x in shown_topics]
+        weights = [sum([float(item.split("*")[0]) for item in shown_topics[topicN][1].split("+")]) for topicN in
+                   topics_nos]
+        df = pd.DataFrame({'topic_id': topics_nos, 'weight': weights})
+        index_names = df[df['weight'] == 0.0].index
+        df.drop(index_names, inplace=True)
+        topic_wight_df_path = self.folder_path + self.algorithm + '/topic_wight_df.csv'
+        df.to_csv(topic_wight_df_path)
+        print("topic_prob_extractor")
+        return df
 
 
 def save_coherence_plot(num_topics, coherence_scores, figure_path):
@@ -152,18 +154,19 @@ def main():
     texts = [literal_eval(x) for x in list(df["description"])]
     print("texts created")
     del df
+    print(type(args))
+    d = vars(args)
+    print(d)
     # todo use factory method
     if args.algorithm == "lsa":
-        # todo number of inputs are too much
-        lsa_obj = LSA(texts, topic_modeling_path, "lsa", args.min_topics, args.max_topics, args.step_topics)
+        lsa_obj = LSA(texts, topic_modeling_path, "lsa", args)
         del texts
 
         lsa_obj.create_models()
         del lsa_obj
 
     elif args.algorithm == "lda":
-        lda_obj = LDA(texts, topic_modeling_path, "lda",
-                      args.min_topics, args.max_topics, args.step_topics)
+        lda_obj = LDA(texts, topic_modeling_path, "lda", args)
         del texts
         lda_obj.create_models()
         del lda_obj
