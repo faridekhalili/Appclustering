@@ -70,9 +70,18 @@ def main():
     df = pd.read_sql_query("SELECT * from app", con)
     con.close()
     df["description"] = pre_process(df[['description']])
-    # df = df[df['description'].map(lambda d: len(literal_eval(d))) > 20]
     df.dropna(subset=["description"], inplace=True)
     df.to_csv(conf['preprocessed_data_path'])
+
+
+def remove_low_quality_docs():
+    conf = toml.load('config.toml')
+    df = pd.read_csv(conf["preprocessed_data_path"])
+    df['len'] = df['description'].map(lambda d: len(literal_eval(d)))
+    df = df[df['len'] > 20]
+    stat = df['len'].describe()
+    df.to_csv(conf['preprocessed_data_path'])
+    print(stat)
 
 
 if __name__ == "__main__":

@@ -11,16 +11,6 @@ from abc import ABC, abstractmethod
 from ast import literal_eval
 
 
-def get_args():
-    parser = argparse.ArgumentParser(description='Topic modeling software')
-    parser.add_argument('--algorithm', dest='algorithm', type=str, help='topic modeling algorithm')
-    parser.add_argument('--min', dest='min_topics', type=int, help='min number of topics')
-    parser.add_argument('--max', dest='max_topics', type=int, help='max number of topics')
-    parser.add_argument('--step', dest='step_topics', type=int, help='step to increment')
-    args = parser.parse_args()
-    return args
-
-
 def get_range_file_name():
     args = get_args()
     return '_'.join([str(args.min_topics), str(args.max_topics), str(args.step_topics)])
@@ -67,9 +57,6 @@ class TopicModel(ABC):
 
 
 class LSA(TopicModel):
-
-    def __init__(self, dataset, folder_path, algorithm, min_topics=1, max_topics=101, step=10):
-        super().__init__(dataset, folder_path, algorithm, min_topics, max_topics, step)
 
     def get_model(self, num_topics):
         start_time = time.time()
