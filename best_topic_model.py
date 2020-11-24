@@ -29,7 +29,7 @@ def extract_dominant_topics(model, df, folder_path):
             dominant_topic = max(topic_distribution, key=topic_distribution.get)
             topic_clusters.append(dominant_topic)
     print("empty model[corpus_tfidf[i]: " + str(remove_indices))
-    write_to_file('\n\n' + str(remove_indices) + '\n\n')
+    write_to_file('\n\n' + "empty model[corpus_tfidf[i]: " + str(remove_indices) + '\n\n')
     print("__extract_dominant_topics")
     return topic_clusters, remove_indices
 
@@ -66,8 +66,9 @@ def get_optimal_number_from_cv(algorithm, folder_path):
     all_files = glob.glob(path + "/*.csv")  # todo here is a bug. it also considers labeled
     li = []
     for filename in all_files:
-        df = pd.read_csv(filename, index_col=None, header=0)
-        li.append(df)
+        if filename != path + "/labeled.csv":
+            df = pd.read_csv(filename, index_col=None, header=0)
+            li.append(df)
     df = pd.concat(li, axis=0, ignore_index=True)
     df.drop(columns=['Unnamed: 0'], inplace=True)
     best_number_topics = df.iloc[df['coherence_scores'].argmax()]["num_topics"]
