@@ -16,21 +16,29 @@ def save_topic_model(model, folder_path, algorithm):
     print("save_topic_model")
 
 
-def extract_dominant_topics(model, dataset, folder_path):
+def extract_dominant_topics(model, df, folder_path):
+    texts = [literal_eval(x) for x in list(df["description"])]
     topic_clusters = []
-    dictionary, corpus_tfidf = load_dictionary_and_tfidf_corpus(dataset, folder_path)
+    remove_indices = []
+    dictionary, corpus_tfidf = load_dictionary_and_tfidf_corpus(texts, folder_path)
     for i in range(len(corpus_tfidf)):
-        topic_distribution = dict(model[corpus_tfidf[i]])
-        dominant_topic = max(topic_distribution, key=topic_distribution.get)
-        topic_clusters.append(dominant_topic)
+        if len(model[corpus_tfidf[i]]) == 0:
+            remove_indices.append(i)
+        else:
+            topic_distribution = dict(model[corpus_tfidf[i]])
+            dominant_topic = max(topic_distribution, key=topic_distribution.get)
+            topic_clusters.append(dominant_topic)
+    print("empty model[corpus_tfidf[i]: " + str(remove_indices))
+    write_to_file('\n\n' + str(remove_indices) + '\n\n')
     print("__extract_dominant_topics")
-    return topic_clusters
+    return topic_clusters, remove_indices
 
 
 def divide_into_clusters(model, df, folder_path, algorithm):
-    texts = [literal_eval(x) for x in list(df["description"])]
-    topic_clusters = extract_dominant_topics(model, texts, folder_path)
-    extended_df = pd.DataFrame(list(zip(texts, topic_clusters, list(df["category"]))),
+    topic_clusters, remove_indices = extract_dominant_topics(model, df, folder_path)
+    df.drop(remove_indices, inplace=True)
+    df.reset_index(drop=True, inplace=True)
+    extended_df = pd.DataFrame(list(zip(list(df["description"]), topic_clusters, list(df["category"]))),
                                columns=['description', 'topic', 'category'])
     extended_df.to_csv(folder_path + algorithm + '/labeled.csv')
     print("divide_into_clusters")
@@ -64,7 +72,7 @@ def get_optimal_number_from_cv(algorithm, folder_path):
     df.drop(columns=['Unnamed: 0'], inplace=True)
     best_number_topics = df.iloc[df['coherence_scores'].argmax()]["num_topics"]
     df.sort_values(by=['num_topics'], inplace=True)
-    save_coherence_plot(list(df['num_topics']), list(df['coherence_scores']), path+'/overall_cv.png')
+    save_coherence_plot(list(df['num_topics']), list(df['coherence_scores']), path + '/overall_cv.png')
     return best_number_topics
 
 
