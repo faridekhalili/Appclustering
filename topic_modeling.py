@@ -30,7 +30,7 @@ class TopicModel(ABC):
         if len(self.num_topics) < 2:
             return
         png_name = get_range_file_name()
-        figure_path = self.folder_path + self.algorithm + '/' + png_name + '_' + coherence_measure+'.png'
+        figure_path = self.folder_path + self.algorithm + '/' + png_name + '_' + coherence_measure + '.png'
         save_coherence_plot(self.num_topics, coherence_scores, figure_path)
         print("__plot_coherence_scores")
 

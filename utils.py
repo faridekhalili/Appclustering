@@ -17,8 +17,7 @@ def write_to_file(message):
     f.write(message)
 
 
-
-def load_dictionary_and_tfidf_corpus(dataset, folder_path): # todo here data set have loaded and it will not be used
+def load_dictionary_and_tfidf_corpus(dataset, folder_path):  # todo here data set have loaded and it will not be used
     # if corpus is already save. So there is extra un necessary operation.
     dictionary_path = folder_path + "dictionary"
     tfidf_path = folder_path + "tfidf_model"
