@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from gensim.models.coherencemodel import CoherenceModel
 from pprint import pprint
 from utils import *
-from preprocessor import *
+from preprocessorکه  import *
 from abc import ABC, abstractmethod
 from ast import literal_eval
 
@@ -59,8 +59,8 @@ class TopicModel(ABC):
         coherence_scores_df.to_csv(file_name)
         self.__plot_coherence_scores(u_mass_list, "u_mass")
         self.__plot_coherence_scores(c_v_list, "c_v")
-        self.__plot_coherence_scores(c_uci, "c_uci")
-        self.__plot_coherence_scores(c_npmi, "c_npmi")
+        self.__plot_coherence_scores(c_uci_list, "c_uci")
+        self.__plot_coherence_scores(c_npmi_list, "c_npmi")
         print("models created")
 
     @abstractmethod
