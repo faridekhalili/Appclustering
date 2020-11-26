@@ -46,16 +46,24 @@ class TopicModel(ABC):
 
     def create_models(self):
         file_name = self.folder_path + self.algorithm + '/' + get_range_file_name() + ".csv"
-        coherence_scores = []
+        u_mass_list, c_v_list, c_uci_list, c_npmi_list = []
         for i in self.num_topics:
             print(i)
             model = self.get_model(i)
-            cm = CoherenceModel(model=model, texts=self.dataset,
-                                corpus=self.corpus_tfidf, coherence='c_v')
-            coherence_scores.append(cm.get_coherence())
+            u_mass_list.append(CoherenceModel(model=model, texts=self.dataset,
+                                              corpus=self.corpus_tfidf, coherence='u_mass').get_coherence())
+            c_v_list.append(CoherenceModel(model=model, texts=self.dataset,
+                                           corpus=self.corpus_tfidf, coherence='c_v').get_coherence())
+            c_uci_list.append(CoherenceModel(model=model, texts=self.dataset,
+                                             corpus=self.corpus_tfidf, coherence='c_uci').get_coherence())
+            c_npmi_list.append(CoherenceModel(model=model, texts=self.dataset,
+                                              corpus=self.corpus_tfidf, coherence='c_npmi').get_coherence())
         coherence_scores_df = pd.DataFrame(
             {'num_topics': self.num_topics,
-             'coherence_scores': coherence_scores,
+             'u_mass': u_mass_list,
+             'c_v': c_v_list,
+             'c_uci': c_uci_list,
+             'c_npmi': c_npmi_list,
              })
         coherence_scores_df.to_csv(file_name)
         self.__plot_coherence_scores(coherence_scores)

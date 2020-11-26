@@ -17,14 +17,15 @@ def write_to_file(message):
 
 
 def load_dictionary_and_tfidf_corpus(dataset, folder_path):
-    dictionary_path = folder_path + "dataset.dict"
-    tfidf_path = folder_path + "dataset.tfidf_model"
+    dictionary_path = folder_path + "dictionary"
+    tfidf_path = folder_path + "tfidf_model"
     tfidf_corpus_path = folder_path + "tfidf_corpus"
     try:
         dictionary = pickle.load(open(dictionary_path, "rb"))
         corpus_tfidf = pickle.load(open(tfidf_corpus_path, "rb"))
     except (OSError, IOError) as e:
         dictionary = gensim.corpora.Dictionary(dataset)
+        dictionary.filter_extremes(no_below=20, no_above=0.13, keep_n=len(dictionary))
         pickle.dump(dictionary, open(dictionary_path, "wb"))
         bow_corpus = [dictionary.doc2bow(doc) for doc in dataset]
         tfidf = gensim.models.TfidfModel(bow_corpus)
