@@ -69,6 +69,7 @@ def get_best_word2vec_model(algorithm, new_docs, path):
 
 
 def main():
+    # todo it is enough to find a topic for a description and load the model
     conf = toml.load('config.toml')
     test_input_path = conf['test_input_path']
     test_result_path = conf['test_result_path']
@@ -79,7 +80,8 @@ def main():
     write_result(lsa_word2vec_model_list, test_result_path + 'lsa_results.txt')
 
     lda_word2vec_model_list = get_best_word2vec_model('lda', test_df, topic_modeling_path)
-    write_result(lda_word2vec_model_list, test_result_path + 'lda_results.txt')
+    write_result(lda_word2vec_model_list,
+                 test_result_path + 'lda_results.txt')  # todo what is this. Remove if unnecessary.
 
     # an example of how we can retrieve the word2vec model of a given test data (say test_df[0])
     test_w2v_model = retrieve_w2v_model(lsa_word2vec_model_list[0])

@@ -48,14 +48,14 @@ def main():
     if args.algorithm is None:
         print('set algorithm first')
         return
-    if args.modelNumbers is None or args.algorithm is None:
+    if args.modelNumbers is None or args.algorithm is None:  # todo if number was not given still there can be algorithm
         extract_word2vec_models(topic_modeling_path, "lsa")
         extract_word2vec_models(topic_modeling_path, "lda")
         extract_word2vec_models(topic_modeling_path, "hdp")
     else:
         model_path = topic_modeling_path + args.algorithm
         extended_df = pd.read_csv(model_path + '/labeled.csv')
-        for model_number in args.modelNumbers:
+        for model_number in args.modelNumbers:  # todo train for all if number was not given
             if int(model_number) > extended_df["topic"].max():
                 print("Sorry there is no category " + model_number + " created from the " + args.algorithm)
                 continue
