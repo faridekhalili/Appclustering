@@ -36,11 +36,11 @@ class TopicModel(ABC):
         print("init done")
         super().__init__()
 
-    def __plot_coherence_scores(self, coherence_scores):
+    def __plot_coherence_scores(self, coherence_scores, coherence_measure):
         if len(self.num_topics) < 2:
             return
         png_name = get_range_file_name()
-        figure_path = self.folder_path + self.algorithm + '/' + png_name + '_coherence.png'
+        figure_path = self.folder_path + self.algorithm + '/' + png_name + '_' + coherence_measure+'.png'
         save_coherence_plot(self.num_topics, coherence_scores, figure_path)
         print("__plot_coherence_scores")
 
@@ -66,7 +66,10 @@ class TopicModel(ABC):
              'c_npmi': c_npmi_list,
              })
         coherence_scores_df.to_csv(file_name)
-        self.__plot_coherence_scores(coherence_scores)
+        self.__plot_coherence_scores(u_mass_list, "u_mass")
+        self.__plot_coherence_scores(c_v_list, "c_v")
+        self.__plot_coherence_scores(c_uci, "c_uci")
+        self.__plot_coherence_scores(c_npmi, "c_npmi")
         print("models created")
 
     @abstractmethod
