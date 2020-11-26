@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from gensim.models.coherencemodel import CoherenceModel
 from pprint import pprint
 from utils import *
-from preprocessorکه  import *
+from preprocessor import *
 from abc import ABC, abstractmethod
 from ast import literal_eval
 
