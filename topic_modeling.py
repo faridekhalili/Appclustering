@@ -150,6 +150,7 @@ def main():
     remove_low_quality_docs(0)
     df = pd.read_csv(conf["preprocessed_data_path"])
     print("df read")
+    print(df.columns)
     texts = [literal_eval(x) for x in list(df["description"])]
     print("texts created")
     del df
