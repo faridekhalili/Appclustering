@@ -74,11 +74,11 @@ def main():
     df.to_csv(conf['preprocessed_data_path'])
 
 
-def remove_low_quality_docs():
+def remove_low_quality_docs(low_bound):
     conf = toml.load('config.toml')
     df = pd.read_csv(conf["preprocessed_data_path"])
     df['len'] = df['description'].map(lambda d: len(literal_eval(d)))
-    df = df[df['len'] > 20]
+    df = df[df['len'] > low_bound]
     stat = df['len'].describe()
     df.to_csv(conf['preprocessed_data_path'])
     print(stat)

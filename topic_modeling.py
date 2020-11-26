@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from gensim.models.coherencemodel import CoherenceModel
 from pprint import pprint
 from utils import *
+from preprocessor import *
 from abc import ABC, abstractmethod
 from ast import literal_eval
 
@@ -36,7 +37,7 @@ class TopicModel(ABC):
 
     def create_models(self):
         file_name = self.folder_path + self.algorithm + '/' + get_range_file_name() + ".csv"
-        u_mass_list, c_v_list, c_uci_list, c_npmi_list = []
+        u_mass_list, c_v_list, c_uci_list, c_npmi_list = [], [], [], []
         for i in self.num_topics:
             print(i)
             model = self.get_model(i)
@@ -146,6 +147,7 @@ def main():
     conf = toml.load('config.toml')
     topic_modeling_path = conf['topic_modeling_path']
     print("reading df")
+    remove_low_quality_docs(0)
     df = pd.read_csv(conf["preprocessed_data_path"])
     print("df read")
     texts = [literal_eval(x) for x in list(df["description"])]
