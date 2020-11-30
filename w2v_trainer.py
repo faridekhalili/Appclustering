@@ -1,11 +1,7 @@
 import toml
 import time
-import pandas as pd
-import numpy as np
-import warnings
 from gensim.models import Word2Vec
 from ast import literal_eval
-import argparse
 from utils import *
 
 
@@ -48,14 +44,12 @@ def main():
     if args.algorithm is None:
         print('set algorithm first')
         return
-    if args.modelNumbers is None or args.algorithm is None:  # todo if number was not given still there can be algorithm
-        extract_word2vec_models(topic_modeling_path, "lsa")
-        extract_word2vec_models(topic_modeling_path, "lda")
-        extract_word2vec_models(topic_modeling_path, "hdp")
+    if args.modelNumbers is None:
+        extract_word2vec_models(topic_modeling_path, args.algorithm)
     else:
         model_path = topic_modeling_path + args.algorithm
         extended_df = pd.read_csv(model_path + '/labeled.csv')
-        for model_number in args.modelNumbers:  # todo train for all if number was not given
+        for model_number in args.modelNumbers:
             if int(model_number) > extended_df["topic"].max():
                 print("Sorry there is no category " + model_number + " created from the " + args.algorithm)
                 continue

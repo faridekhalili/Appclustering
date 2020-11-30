@@ -1,5 +1,4 @@
 import time
-import matplotlib.pyplot as plt
 from gensim.models.coherencemodel import CoherenceModel
 from pprint import pprint
 from utils import *
@@ -93,7 +92,7 @@ class LDA(TopicModel):
         return lda_model
 
 
-class HDP():
+class HDP:
 
     def __init__(self, dataset, folder_path, algorithm):
         self.dataset = dataset
@@ -138,6 +137,15 @@ def save_coherence_plot(num_topics, coherence_scores, figure_path):
     plt.close()
 
 
+def topic_model_factory(texts, topic_modeling_path, args):
+    topic_models = {
+        "lda": LSA(texts, topic_modeling_path, "lsa", args),
+        "lsa": LDA(texts, topic_modeling_path, "lda", args),
+    }
+
+    return topic_models[args.algorithm]()
+
+
 def main():
     args = get_args()
     conf = toml.load('config.toml')
@@ -150,25 +158,18 @@ def main():
     texts = [literal_eval(x) for x in list(df["description"])]
     print("texts created")
     del df
-    # todo use factory method
-    if args.algorithm == "lsa":
-        lsa_obj = LSA(texts, topic_modeling_path, "lsa", args)
-        del texts
-        lsa_obj.create_models()
-        del lsa_obj
 
-    elif args.algorithm == "lda":
-        lda_obj = LDA(texts, topic_modeling_path, "lda", args)
-        del texts
-        lda_obj.create_models()
-        del lda_obj
-
-    elif args.algorithm == "hdp":
+    if args.algorithm == "hdp":
         hdp_obj = HDP(texts, topic_modeling_path, "hdp")
         del texts
         hdp_model = hdp_obj.get_model()
         hdp_obj.topic_prob_extractor(hdp_model)
         del hdp_obj
+    else:
+        topic_model_obj = topic_model_factory(args.algorithm)
+        del texts
+        topic_model_obj.create_models()
+        del topic_model_obj
 
 
 if __name__ == "__main__":

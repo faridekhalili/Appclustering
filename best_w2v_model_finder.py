@@ -1,19 +1,29 @@
 from gensim.models.ldamulticore import LdaMulticore
 from gensim.models import LsiModel
-from gensim.models import Word2Vec
 from preprocessor import pre_process
 import pandas as pd
 import pickle
 import toml
 
 
-def retrieve_w2v_model(model_path):
+def retrieve_w2v_model_with_number(algorithm, model_number):
+    conf = toml.load('config.toml')
+    model_path = conf['topic_modeling_path'] + algorithm + "/word2vec_models/" + model_number + ".model"
     if model_path == "none":
         print("sorry no model was found!")
         return
     else:
-        test_w2v_model = Word2Vec.load(model_path)
-        return test_w2v_model
+        w2v_model = pickle.load(open(model_path, 'rb'))
+        return w2v_model
+
+
+def retrieve_w2v_model_with_path(model_path):
+    if model_path == "none":
+        print("sorry no model was found!")
+        return
+    else:
+        w2v_model = pickle.load(open(model_path, 'rb'))
+        return w2v_model
 
 
 def write_result(some_list, filename):
@@ -80,11 +90,11 @@ def main():
     write_result(lsa_word2vec_model_list, test_result_path + 'lsa_results.txt')
 
     lda_word2vec_model_list = get_best_word2vec_model('lda', test_df, topic_modeling_path)
-    write_result(lda_word2vec_model_list,
-                 test_result_path + 'lda_results.txt')  # todo what is this. Remove if unnecessary.
+    write_result(lda_word2vec_model_list, test_result_path + 'lda_results.txt')
+    # todo what is this. Remove if unnecessary.
 
     # an example of how we can retrieve the word2vec model of a given test data (say test_df[0])
-    test_w2v_model = retrieve_w2v_model(lsa_word2vec_model_list[0])
+    test_w2v_model = retrieve_w2v_model_with_path(lsa_word2vec_model_list[0])
 
 
 if __name__ == "__main__":

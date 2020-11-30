@@ -1,6 +1,8 @@
 import argparse
 import pickle
 import gensim
+import matplotlib.pyplot as plt
+import pandas as pd
 
 
 def pickle_save(my_model, file_name):
@@ -45,3 +47,11 @@ def get_args():
     parser.add_argument('--step', dest='step_topics', type=int, help='step to increment')
     args = parser.parse_args()
     return args
+
+
+def plot_distribution(df, plot_path, col):
+    plt.figure(figsize=(15, 5))
+    pd.value_counts(df[col]).plot.bar(title="category distribution in the dataset")
+    plt.xlabel("Topic")
+    plt.ylabel("Number of applications in the topic")
+    plt.savefig(plot_path)

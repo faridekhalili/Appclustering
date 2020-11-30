@@ -1,13 +1,9 @@
-import pandas as pd
 from ast import literal_eval
 import toml
-import argparse
 import glob
-
 from topic_modeling import save_coherence_plot
 from utils import *
 from pprint import pprint
-import matplotlib.pyplot as plt
 
 
 def save_topic_model(model, folder_path, algorithm):
@@ -63,7 +59,7 @@ def get_best_topic_model(df, folder_path, algorithm):
 
 def get_optimal_number_from_cv(algorithm, folder_path):
     path = folder_path + algorithm
-    all_files = glob.glob(path + "/*.csv")  # todo here is a bug. it also considers labeled
+    all_files = glob.glob(path + "/*.csv")
     li = []
     for filename in all_files:
         if filename != path + "/labeled.csv":
@@ -75,14 +71,6 @@ def get_optimal_number_from_cv(algorithm, folder_path):
     df.sort_values(by=['num_topics'], inplace=True)
     save_coherence_plot(list(df['num_topics']), list(df['coherence_scores']), path + '/overall_cv.png')
     return best_number_topics
-
-
-def plot_distribution(df, plot_path, col):
-    plt.figure(figsize=(15, 5))
-    pd.value_counts(df[col]).plot.bar(title="category distribution in the dataset")
-    plt.xlabel("Topic")
-    plt.ylabel("Number of applications in the topic")
-    plt.savefig(plot_path)
 
 
 def main():

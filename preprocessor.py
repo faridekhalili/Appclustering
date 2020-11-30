@@ -79,7 +79,6 @@ def main():
     # Read sqlite query results into a pandas DataFrame
     con = sqlite3.connect(conf['database_path'])
     df = pd.read_sql_query("SELECT * from app", con)
-    df = df.iloc[0:5]
     con.close()
     df["description"] = pre_process(df[['description']])
     df.dropna(subset=["description"], inplace=True)
