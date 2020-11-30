@@ -1,8 +1,4 @@
-import argparse
-import toml
 import time
-import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
 from gensim.models.coherencemodel import CoherenceModel
 from pprint import pprint

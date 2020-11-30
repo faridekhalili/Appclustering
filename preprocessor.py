@@ -19,6 +19,7 @@ nltk.download('stopwords')
 nltk.download('punkt')
 nltk.download('wordnet')
 from nltk.corpus import stopwords
+from nltk.corpus import wordnet
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
 
@@ -39,10 +40,20 @@ def remove_stop_words(input_str):
         return joined_result
 
 
+def get_wordnet_pos(word):
+    """Map POS tag to first character lemmatize() accepts"""
+    tag = nltk.pos_tag([word])[0][1][0].upper()
+    tag_dict = {"J": wordnet.ADJ,
+                "N": wordnet.NOUN,
+                "V": wordnet.VERB,
+                "R": wordnet.ADV}
+    return tag_dict.get(tag, wordnet.NOUN)
+
+
 def lemmatizing(input_str):
     lemmatizer = WordNetLemmatizer()
     input_str = word_tokenize(input_str)
-    result = [lemmatizer.lemmatize(i) for i in input_str]
+    result = [lemmatizer.lemmatize(i, get_wordnet_pos(i)) for i in input_str]
     return ' '.join(result)
 
 
@@ -68,6 +79,7 @@ def main():
     # Read sqlite query results into a pandas DataFrame
     con = sqlite3.connect(conf['database_path'])
     df = pd.read_sql_query("SELECT * from app", con)
+    df = df.iloc[0:5]
     con.close()
     df["description"] = pre_process(df[['description']])
     df.dropna(subset=["description"], inplace=True)
