@@ -14,7 +14,10 @@ def get_range_file_name():
 
 class TopicModel(ABC):
     def __init__(self, dataset, folder_path, algorithm, args):
-        self.num_topics = list(range(args.min_topics, args.max_topics, args.step_topics))
+        if args.min_topics is None or args.max_topics is None or args.step_topics is None:
+            self.num_topics = list(range(1, 50, 10))
+        else:
+            self.num_topics = list(range(args.min_topics, args.max_topics, args.step_topics))
         self.dataset = dataset
         self.folder_path = folder_path
         self.algorithm = algorithm
@@ -139,11 +142,11 @@ def save_coherence_plot(num_topics, coherence_scores, figure_path):
 
 def topic_model_factory(texts, topic_modeling_path, args):
     topic_models = {
-        "lda": LSA(texts, topic_modeling_path, "lsa", args),
-        "lsa": LDA(texts, topic_modeling_path, "lda", args),
+        "lda": LDA(texts, topic_modeling_path, "lda", args),
+        "lsa": LSA(texts, topic_modeling_path, "lsa", args),
     }
 
-    return topic_models[args.algorithm]()
+    return topic_models[args.algorithm]
 
 
 def main():
@@ -151,13 +154,15 @@ def main():
     conf = toml.load('config.toml')
     topic_modeling_path = conf['topic_modeling_path']
     print("reading df")
-    remove_low_quality_docs(0)
     df = pd.read_csv(conf["preprocessed_data_path"])
     print("df read")
     print(df.columns)
     texts = [literal_eval(x) for x in list(df["description"])]
     print("texts created")
     del df
+
+    if args.algorithm is None:
+        args.algorithm = "lda"
 
     if args.algorithm == "hdp":
         hdp_obj = HDP(texts, topic_modeling_path, "hdp")
@@ -166,7 +171,7 @@ def main():
         hdp_obj.topic_prob_extractor(hdp_model)
         del hdp_obj
     else:
-        topic_model_obj = topic_model_factory(args.algorithm)
+        topic_model_obj = topic_model_factory(texts, topic_modeling_path, args)
         del texts
         topic_model_obj.create_models()
         del topic_model_obj
