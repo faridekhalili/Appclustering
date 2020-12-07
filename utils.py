@@ -3,6 +3,7 @@ import pickle
 import gensim
 import matplotlib.pyplot as plt
 import pandas as pd
+import numpy as np
 
 
 def pickle_save(my_model, file_name):
@@ -55,3 +56,17 @@ def plot_distribution(df, plot_path, col):
     plt.xlabel("Topic")
     plt.ylabel("Number of applications in the topic")
     plt.savefig(plot_path)
+
+
+def gaussian_plot(li):
+    sigma = np.std(li)
+    mu = np.mean(li)
+    s = np.random.normal(mu, sigma, 1000000)
+    sorted_samples = np.sort(s)
+    lower_bound = int(sorted_samples[int(len(sorted_samples) * 13 / 100)])
+    upper_bound = int(sorted_samples[-int(len(sorted_samples) * 13 / 100)])
+    count, bins, ignored = plt.hist(s, 30, density=True)
+    plt.plot(bins, 1 / (sigma * np.sqrt(2 * np.pi)) * np.exp(- (bins - mu) ** 2 / (2 * sigma ** 2)), linewidth=2,
+             color='r')
+    plt.show()
+    return lower_bound, upper_bound
