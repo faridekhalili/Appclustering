@@ -100,7 +100,7 @@ def filter_words(df, word_filter):
     return df
 
 
-def remove_low_quality_data(df, doc_filter, word_filter):
+def remove_low_quality_data(df,  word_filter, doc_filter):
     df = filter_words(df, word_filter)
     lower_bound = 0
     upper_bound = max(list(df['len']))
