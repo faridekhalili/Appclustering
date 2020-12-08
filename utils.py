@@ -4,6 +4,7 @@ import gensim
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
+from ast import literal_eval
 
 
 def pickle_save(my_model, file_name):
@@ -43,10 +44,16 @@ def load_dictionary_and_tfidf_corpus(dataset, folder_path):  # todo here data se
 def get_args():
     parser = argparse.ArgumentParser(description='Topic modeling software')
     parser.add_argument('--algorithm', dest='algorithm', type=str, help='topic modeling algorithm')
+    parser.add_argument('--word_filter', dest='word_filter', type=str, help='top_n or gaussian')
+    parser.add_argument('--document_filter', dest='document_filter', type=str, help='top_n or gaussian')
     parser.add_argument('--min', dest='min_topics', type=int, help='min number of topics')
     parser.add_argument('--max', dest='max_topics', type=int, help='max number of topics')
     parser.add_argument('--step', dest='step_topics', type=int, help='step to increment')
     args = parser.parse_args()
+    if args.word_filter is None:
+        args.word_filter = "top_n"
+    if args.document_filter is None:
+        args.document_filter = "gaussian"
     return args
 
 
@@ -58,15 +65,52 @@ def plot_distribution(df, plot_path, col):
     plt.savefig(plot_path)
 
 
-def gaussian_plot(li):
+def gaussian_plot(li, p):
     sigma = np.std(li)
     mu = np.mean(li)
     s = np.random.normal(mu, sigma, 1000000)
     sorted_samples = np.sort(s)
-    lower_bound = int(sorted_samples[int(len(sorted_samples) * 13 / 100)])
-    upper_bound = int(sorted_samples[-int(len(sorted_samples) * 13 / 100)])
+    lower_bound = int(sorted_samples[int(len(sorted_samples) * p / 100)])
+    upper_bound = int(sorted_samples[-int(len(sorted_samples) * p / 100)])
     count, bins, ignored = plt.hist(s, 30, density=True)
     plt.plot(bins, 1 / (sigma * np.sqrt(2 * np.pi)) * np.exp(- (bins - mu) ** 2 / (2 * sigma ** 2)), linewidth=2,
              color='r')
     plt.show()
     return lower_bound, upper_bound
+
+
+def filter_words(df, word_filter):
+    texts = [literal_eval(x) for x in list(df["description"])]
+    dictionary = gensim.corpora.Dictionary(texts)
+    filtered_words = []
+    if word_filter == "top_n":
+        for k, v in dictionary.dfs.items():
+            if v < 20 or v > 0.13 * len(df):
+                filtered_words.append(dictionary[k])
+    elif word_filter == "gaussian":
+        for k, v in dictionary.dfs.items():
+            word_frequencies = [v for k, v in dictionary.dfs.items()]
+            l, u = gaussian_plot(word_frequencies, 49)
+            if v < l or v > u:
+                filtered_words.append(dictionary[k])
+    for i in range(len(texts)):
+        texts[i] = [word for word in texts[i] if word not in filtered_words]
+    df["description"] = texts
+    df['len'] = df['description'].map(lambda d: len(literal_eval(d)))
+    return df
+
+
+def remove_low_quality_data(df, doc_filter, word_filter):
+    df = filter_words(df, word_filter)
+    lower_bound = 0
+    upper_bound = max(list(df['len']))
+    if doc_filter == "top_n":
+        print('hi')
+    elif doc_filter == "gaussian":
+        lower_bound, upper_bound = gaussian_plot(list(df['len']), 13)
+    df = df[df['len'] > lower_bound]
+    df = df[df['len'] < upper_bound]
+    df.to_csv("./output/D_" + doc_filter + "_W_" + word_filter + ".csv")
+    stat = df['len'].describe()
+    print(stat)
+    return df

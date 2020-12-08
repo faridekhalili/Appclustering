@@ -1,6 +1,4 @@
 import ssl
-from ast import literal_eval
-from utils import *
 import toml
 import re
 import string
@@ -83,18 +81,6 @@ def main():
     df["description"] = pre_process(df[['description']])
     df.dropna(subset=["description"], inplace=True)
     df.to_csv(conf['preprocessed_data_path'])
-
-
-def remove_low_quality_docs():
-    conf = toml.load('config.toml')
-    df = pd.read_csv(conf["preprocessed_data_path"])
-    df['len'] = df['description'].map(lambda d: len(literal_eval(d)))
-    lower_bound, upper_bound = gaussian_plot(list(df['len']))
-    df = df[df['len'] > lower_bound]
-    df = df[df['len'] < upper_bound]
-    stat = df['len'].describe()
-    print(stat)
-    return df
 
 
 if __name__ == "__main__":

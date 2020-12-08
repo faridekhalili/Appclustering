@@ -1,6 +1,6 @@
 topic_modeling_path = './output/topic_modeling/'
 google_play_model_path = './output/google_play_categories/models/'
-preprocessed_data_path = './output/sampled.csv'
+preprocessed_data_path = './output/new_samples.csv'
 database_path = './input/total-v2.db'
 test_input_path = './input/test_input.csv'
 test_result_path = './output/test/'

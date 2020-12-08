@@ -154,7 +154,8 @@ def main():
     conf = toml.load('config.toml')
     topic_modeling_path = conf['topic_modeling_path']
     print("reading df")
-    df = remove_low_quality_docs()
+    df = pd.read_csv(conf["preprocessed_data_path"])
+    df = remove_low_quality_data(df, )
     print("df read")
     print(df.columns)
     texts = [literal_eval(x) for x in list(df["description"])]
