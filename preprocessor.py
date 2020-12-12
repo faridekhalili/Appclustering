@@ -66,8 +66,8 @@ def pre_process(data):
     processing_data = processing_data.applymap(lambda s: s.strip())
     processing_data = processing_data.applymap(lambda s: ' '.join(s.split()))
     processing_data = processing_data.applymap(lambda s: remove_stop_words(s))
-    processing_data = processing_data.applymap(lambda s: lemmatizing(s))
     processing_data = processing_data.applymap(lambda s: remove_unusual_char(s))
+    processing_data = processing_data.applymap(lambda s: lemmatizing(s))
     processing_data = processing_data.applymap(lambda s: word_tokenize(s))
     return processing_data
 
