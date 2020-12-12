@@ -5,15 +5,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 from ast import literal_eval
-
-
-def pickle_save(my_model, file_name):
-    pickle.dump(my_model, open(file_name, 'wb'))
-
-
-def pickle_load(file_name):
-    loaded_obj = pickle.load(open(file_name, 'rb'))
-    return loaded_obj
+import re
 
 
 def write_to_file(message):
@@ -21,8 +13,7 @@ def write_to_file(message):
     f.write(message)
 
 
-def load_dictionary_and_tfidf_corpus(dataset, folder_path):  # todo here data set have loaded and it will not be used
-    # if corpus is already save. So there is extra un necessary operation.
+def load_dictionary_and_tfidf_corpus(dataset, folder_path):
     dictionary_path = folder_path + "dictionary"
     tfidf_path = folder_path + "tfidf_model"
     tfidf_corpus_path = folder_path + "tfidf_corpus"
@@ -31,7 +22,6 @@ def load_dictionary_and_tfidf_corpus(dataset, folder_path):  # todo here data se
         corpus_tfidf = pickle.load(open(tfidf_corpus_path, "rb"))
     except (OSError, IOError) as e:
         dictionary = gensim.corpora.Dictionary(dataset)
-        dictionary.filter_extremes(no_below=20, no_above=0.13, keep_n=len(dictionary))
         pickle.dump(dictionary, open(dictionary_path, "wb"))
         bow_corpus = [dictionary.doc2bow(doc) for doc in dataset]
         tfidf = gensim.models.TfidfModel(bow_corpus)
@@ -65,18 +55,24 @@ def plot_distribution(df, plot_path, col):
     plt.savefig(plot_path)
 
 
-def gaussian_plot(li, p):
+def get_guassian_boundary(li, p):
     sigma = np.std(li)
     mu = np.mean(li)
     s = np.random.normal(mu, sigma, 1000000)
     sorted_samples = np.sort(s)
     lower_bound = int(sorted_samples[int(len(sorted_samples) * p / 100)])
     upper_bound = int(sorted_samples[-int(len(sorted_samples) * p / 100)])
-    count, bins, ignored = plt.hist(s, 30, density=True)
-    plt.plot(bins, 1 / (sigma * np.sqrt(2 * np.pi)) * np.exp(- (bins - mu) ** 2 / (2 * sigma ** 2)), linewidth=2,
-             color='r')
-    plt.show()
+    print("retrieved gaussian bounds")
     return lower_bound, upper_bound
+
+
+def drop_extra_columns(df):
+    dropping_columns = []
+    for col in df.columns:
+        if re.search("^Unnamed*", col) is not None:
+            dropping_columns.append(col)
+    df.drop(dropping_columns, axis=1, inplace=True)
+    return df
 
 
 def filter_words(df, word_filter):
@@ -85,32 +81,42 @@ def filter_words(df, word_filter):
     filtered_words = []
     if word_filter == "top_n":
         for k, v in dictionary.dfs.items():
-            if v < 20 or v > 0.13 * len(df):
+            if v < 20 or v > 0.13 * len(texts):
                 filtered_words.append(dictionary[k])
     elif word_filter == "gaussian":
+        word_frequencies = [v for k, v in dictionary.dfs.items()]
+        l, u = get_guassian_boundary(word_frequencies, 49)
         for k, v in dictionary.dfs.items():
-            word_frequencies = [v for k, v in dictionary.dfs.items()]
-            l, u = gaussian_plot(word_frequencies, 49)
             if v < l or v > u:
                 filtered_words.append(dictionary[k])
     for i in range(len(texts)):
         texts[i] = [word for word in texts[i] if word not in filtered_words]
     df["description"] = texts
-    df['len'] = df['description'].map(lambda d: len(literal_eval(d)))
+    df['len'] = [len(x) for x in texts]
+    print("filter_words done successfully!")
     return df
 
 
-def remove_low_quality_data(df,  word_filter, doc_filter):
-    df = filter_words(df, word_filter)
+def filter_documents(df, doc_filter):
     lower_bound = 0
     upper_bound = max(list(df['len']))
     if doc_filter == "top_n":
         print('hi')
     elif doc_filter == "gaussian":
-        lower_bound, upper_bound = gaussian_plot(list(df['len']), 13)
+        lower_bound, upper_bound = get_guassian_boundary(list(df['len']), 40)
+
     df = df[df['len'] > lower_bound]
     df = df[df['len'] < upper_bound]
+
+    print("remove_low_quality_data done successfully")
+    return df
+
+
+def prune_dataset(df, word_filter, doc_filter):
+    df = drop_extra_columns(df)
+
+    df = filter_words(df, word_filter)
+
+    df = filter_documents(df, doc_filter)
     df.to_csv("./output/D_" + doc_filter + "_W_" + word_filter + ".csv")
-    stat = df['len'].describe()
-    print(stat)
     return df

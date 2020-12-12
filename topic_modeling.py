@@ -4,7 +4,6 @@ from pprint import pprint
 from utils import *
 from preprocessor import *
 from abc import ABC, abstractmethod
-from ast import literal_eval
 
 
 def get_range_file_name():
@@ -155,10 +154,12 @@ def main():
     topic_modeling_path = conf['topic_modeling_path']
     print("reading df")
     df = pd.read_csv(conf["preprocessed_data_path"])
-    df = remove_low_quality_data(df, args.word_filter, args.document_filter)
     print("df read")
-    print(df.columns)
-    texts = [literal_eval(x) for x in list(df["description"])]
+
+    df = prune_dataset(df, args.word_filter, args.document_filter)
+
+    texts = list(df["description"])
+
     print("texts created")
     del df
 
