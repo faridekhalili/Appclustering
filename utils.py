@@ -93,17 +93,20 @@ def filter_words(df, word_filter):
         texts[i] = [word for word in texts[i] if word not in filtered_words]
     df["description"] = texts
     df['len'] = [len(x) for x in texts]
+    df = df[df['len'] > 0]
     print("filter_words done successfully!")
     return df
 
 
 def filter_documents(df, doc_filter):
+    texts = [literal_eval(x) for x in list(df["description"])]
+    df['len'] = [len(x) for x in texts]
     lower_bound = 0
     upper_bound = max(list(df['len']))
     if doc_filter == "top_n":
         print('hi')
     elif doc_filter == "gaussian":
-        lower_bound, upper_bound = get_guassian_boundary(list(df['len']), 40)
+        lower_bound, upper_bound = get_guassian_boundary(list(df['len']), 15)
 
     df = df[df['len'] > lower_bound]
     df = df[df['len'] < upper_bound]
@@ -115,8 +118,9 @@ def filter_documents(df, doc_filter):
 def prune_dataset(df, word_filter, doc_filter):
     df = drop_extra_columns(df)
 
+    df = filter_documents(df, doc_filter)
+
     df = filter_words(df, word_filter)
 
-    df = filter_documents(df, doc_filter)
     df.to_csv("./output/D_" + doc_filter + "_W_" + word_filter + ".csv")
     return df
