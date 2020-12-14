@@ -81,11 +81,11 @@ def filter_words(df, word_filter):
     filtered_words = []
     if word_filter == "top_n":
         for k, v in dictionary.dfs.items():
-            if v < 20 or v > 0.13 * len(texts):
+            if v < 10 or v > 0.13 * len(texts):
                 filtered_words.append(dictionary[k])
     elif word_filter == "gaussian":
         word_frequencies = [v for k, v in dictionary.dfs.items()]
-        l, u = get_guassian_boundary(word_frequencies, 49)
+        l, u = get_guassian_boundary(word_frequencies, 47)
         for k, v in dictionary.dfs.items():
             if v < l or v > u:
                 filtered_words.append(dictionary[k])
@@ -104,7 +104,9 @@ def filter_documents(df, doc_filter):
     lower_bound = 0
     upper_bound = max(list(df['len']))
     if doc_filter == "top_n":
-        print('hi')
+        lower_bound = 6
+        df = df.sort_values(by=['len'])
+        upper_bound = df.iloc[int(len(df)*98/100)]["len"]
     elif doc_filter == "gaussian":
         lower_bound, upper_bound = get_guassian_boundary(list(df['len']), 15)
 
