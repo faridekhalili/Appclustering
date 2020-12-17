@@ -5,6 +5,7 @@ import string
 import pandas as pd
 import sqlite3
 import nltk
+from langdetect import detect
 
 try:
     _create_unverified_https_context = ssl._create_unverified_context
@@ -20,6 +21,15 @@ from nltk.corpus import stopwords
 from nltk.corpus import wordnet
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
+
+
+def prune_non_english(df):
+    removing_indices = []
+    for index, row in df.iterrows():
+        if detect(row["description"]) != "en":
+            removing_indices.append(index)
+    df = df.drop(removing_indices)
+    return df
 
 
 def remove_punctuation(s):
@@ -78,6 +88,8 @@ def main():
     con = sqlite3.connect(conf['database_path'])
     df = pd.read_sql_query("SELECT * from app", con)
     con.close()
+    df = prune_non_english(df)
+    df.to_csv(conf["english_db_data_path"])
     df["description"] = pre_process(df[['description']])
     df.dropna(subset=["description"], inplace=True)
     df.to_csv(conf['preprocessed_data_path'])
