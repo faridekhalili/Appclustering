@@ -4,8 +4,10 @@ import gensim
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-from ast import literal_eval
 import re
+import nltk
+nltk.download('punkt')
+from nltk.tokenize import word_tokenize
 
 
 def write_to_file(message):
@@ -41,7 +43,7 @@ def get_args():
     parser.add_argument('--step', dest='step_topics', type=int, help='step to increment')
     args = parser.parse_args()
     if args.word_filter is None:
-        args.word_filter = "top_n"
+        args.word_filter = "manual_bound"
     if args.document_filter is None:
         args.document_filter = "gaussian"
     return args
@@ -75,20 +77,19 @@ def drop_extra_columns(df):
     return df
 
 
-def filter_words(df, word_filter):
-    texts = [literal_eval(x) for x in list(df["description"])]
+def filter_words(df, texts, word_filter):
     dictionary = gensim.corpora.Dictionary(texts)
-    filtered_words = []
-    if word_filter == "top_n":
+    filtered_words = set()
+    if word_filter == "manual_bound":
         for k, v in dictionary.dfs.items():
-            if v < 10 or v > 0.13 * len(texts):
-                filtered_words.append(dictionary[k])
+            if v < 0.005 * len(texts) or v > 0.15 * len(texts):
+                filtered_words.add(dictionary[k])
     elif word_filter == "gaussian":
         word_frequencies = [v for k, v in dictionary.dfs.items()]
         l, u = get_guassian_boundary(word_frequencies, 47)
         for k, v in dictionary.dfs.items():
             if v < l or v > u:
-                filtered_words.append(dictionary[k])
+                filtered_words.add(dictionary[k])
     for i in range(len(texts)):
         texts[i] = [word for word in texts[i] if word not in filtered_words]
     df["description"] = texts
@@ -98,12 +99,12 @@ def filter_words(df, word_filter):
     return df
 
 
-def filter_documents(df, doc_filter):
-    texts = [literal_eval(x) for x in list(df["description"])]
+def filter_documents(df, texts, doc_filter):
+
     df['len'] = [len(x) for x in texts]
     lower_bound = 0
     upper_bound = max(list(df['len']))
-    if doc_filter == "top_n":
+    if doc_filter == "manual_bound":
         lower_bound = 6
         df = df.sort_values(by=['len'])
         upper_bound = df.iloc[int(len(df)*98/100)]["len"]
@@ -118,11 +119,10 @@ def filter_documents(df, doc_filter):
 
 
 def prune_dataset(df, word_filter, doc_filter):
+    processing_data = df[['description']].applymap(lambda s: word_tokenize(s))
+    texts = list(processing_data["description"])
     df = drop_extra_columns(df)
-
-    df = filter_documents(df, doc_filter)
-
-    df = filter_words(df, word_filter)
-
+    df = filter_words(df, texts, word_filter)
+    df = filter_documents(df, texts, doc_filter)
     df.to_csv("./output/D_" + doc_filter + "_W_" + word_filter + ".csv")
     return df
