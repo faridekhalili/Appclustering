@@ -6,6 +6,7 @@ import pandas as pd
 import sqlite3
 import nltk
 from langdetect import detect
+from langdetect.lang_detect_exception import LangDetectException
 
 try:
     _create_unverified_https_context = ssl._create_unverified_context
@@ -26,7 +27,11 @@ from nltk.stem import WordNetLemmatizer
 def prune_non_english(df):
     removing_indices = []
     for index, row in df.iterrows():
-        if detect(row["description"]) != "en":
+        try:
+            lang = detect(row["description"])
+        except LangDetectException:
+            removing_indices.append(index)
+        if lang != "en":
             removing_indices.append(index)
     df = df.drop(removing_indices)
     return df
@@ -42,10 +47,7 @@ def remove_stop_words(input_str):
     tokens = word_tokenize(input_str)
     result = [i for i in tokens if i not in stop_words]
     joined_result = ' '.join(result)
-    if joined_result == '':
-        return input_str
-    else:
-        return joined_result
+    return joined_result
 
 
 def get_wordnet_pos(word):
@@ -78,7 +80,6 @@ def pre_process(data):
     processing_data = processing_data.applymap(lambda s: remove_stop_words(s))
     processing_data = processing_data.applymap(lambda s: remove_unusual_char(s))
     processing_data = processing_data.applymap(lambda s: lemmatizing(s))
-    processing_data = processing_data.applymap(lambda s: word_tokenize(s))
     return processing_data
 
 
@@ -89,9 +90,11 @@ def main():
     df = pd.read_sql_query("SELECT * from app", con)
     con.close()
     df = prune_non_english(df)
-    df.to_csv(conf["english_db_data_path"])
+    df.to_csv(conf["english_db_path"])
     df["description"] = pre_process(df[['description']])
     df.dropna(subset=["description"], inplace=True)
+    df = df[df["description"] != ""]
+
     df.to_csv(conf['preprocessed_data_path'])
 
 
