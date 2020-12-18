@@ -33,32 +33,23 @@ class TopicModel(ABC):
         print("__plot_coherence_scores")
 
     def create_models(self):
-        texts = [literal_eval(x) for x in self.dataset]
         file_name = self.folder_path + self.algorithm + '/' + get_range_file_name() + ".csv"
-        u_mass_list, c_v_list, c_uci_list, c_npmi_list = [], [], [], []
+        u_mass_list, c_v_list = [], []
         for i in self.num_topics:
             print(i)
             model = self.get_model(i)
-            u_mass_list.append(CoherenceModel(model=model, texts=texts,
+            u_mass_list.append(CoherenceModel(model=model, texts=self.dataset,
                                               corpus=self.corpus_tfidf, coherence='u_mass').get_coherence())
-            c_v_list.append(CoherenceModel(model=model, texts=texts,
+            c_v_list.append(CoherenceModel(model=model, texts=self.dataset,
                                            corpus=self.corpus_tfidf, coherence='c_v').get_coherence())
-            c_uci_list.append(CoherenceModel(model=model, texts=texts,
-                                             corpus=self.corpus_tfidf, coherence='c_uci').get_coherence())
-            c_npmi_list.append(CoherenceModel(model=model, texts=texts,
-                                              corpus=self.corpus_tfidf, coherence='c_npmi').get_coherence())
         coherence_scores_df = pd.DataFrame(
             {'num_topics': self.num_topics,
              'u_mass': u_mass_list,
              'c_v': c_v_list,
-             'c_uci': c_uci_list,
-             'c_npmi': c_npmi_list,
              })
         coherence_scores_df.to_csv(file_name)
         self.__plot_coherence_scores(u_mass_list, "u_mass")
         self.__plot_coherence_scores(c_v_list, "c_v")
-        self.__plot_coherence_scores(c_uci_list, "c_uci")
-        self.__plot_coherence_scores(c_npmi_list, "c_npmi")
         print("models created")
 
     @abstractmethod

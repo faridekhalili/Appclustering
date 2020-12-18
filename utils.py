@@ -99,9 +99,7 @@ def filter_words(df, texts, word_filter):
     return df
 
 
-def filter_documents(df, texts, doc_filter):
-
-    df['len'] = [len(x) for x in texts]
+def filter_documents(df, doc_filter):
     lower_bound = 0
     upper_bound = max(list(df['len']))
     if doc_filter == "manual_bound":
@@ -114,15 +112,15 @@ def filter_documents(df, texts, doc_filter):
     df = df[df['len'] > lower_bound]
     df = df[df['len'] < upper_bound]
 
-    print("remove_low_quality_data done successfully")
+    print("filter_documents done successfully")
     return df
 
 
 def prune_dataset(df, word_filter, doc_filter):
-    processing_data = df[['description']].applymap(lambda s: word_tokenize(s))
-    texts = list(processing_data["description"])
+    tokenized_data = df[['description']].applymap(lambda s: word_tokenize(s))
+    texts = list(tokenized_data["description"])
     df = drop_extra_columns(df)
     df = filter_words(df, texts, word_filter)
-    df = filter_documents(df, texts, doc_filter)
+    df = filter_documents(df, doc_filter)
     df.to_csv("./output/D_" + doc_filter + "_W_" + word_filter + ".csv")
     return df
