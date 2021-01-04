@@ -25,7 +25,7 @@ def extract_dominant_topics(model, df, folder_path):
             dominant_topic = max(topic_distribution, key=topic_distribution.get)
             topic_clusters.append(dominant_topic)
     print("empty model[corpus_tfidf[i]: " + str(remove_indices))
-    write_to_file('\n\n' + "empty model[corpus_tfidf[i]: " + str(remove_indices) + '\n\n')
+    write_to_file('\n\n' + "empty model[corpus_tfidf[i]]: " + str(remove_indices) + '\n\n')
     print("__extract_dominant_topics")
     return topic_clusters, remove_indices
 
@@ -85,7 +85,8 @@ def main():
 
     if args.algorithm == "hdp":
         model_path = topic_modeling_path + 'hdp/model/hdp.model'
-        hdp_model = pickle.load(open(model_path, 'rb'))
+        with open(model_path, 'rb') as pickle_file:
+            hdp_model = pickle.load(pickle_file)
         divide_into_clusters(hdp_model, df, topic_modeling_path, args.algorithm)
     else:
         model = get_best_topic_model(df, topic_modeling_path, args.algorithm)

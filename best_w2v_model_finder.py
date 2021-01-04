@@ -13,7 +13,8 @@ def retrieve_w2v_model_with_number(algorithm, model_number):
         print("sorry no model was found!")
         return
     else:
-        w2v_model = pickle.load(open(model_path, 'rb'))
+        with open(model_path, 'rb') as pickle_file:
+            w2v_model = pickle.load(pickle_file)
         return w2v_model
 
 
@@ -22,7 +23,8 @@ def retrieve_w2v_model_with_path(model_path):
         print("sorry no model was found!")
         return
     else:
-        w2v_model = pickle.load(open(model_path, 'rb'))
+        with open(model_path, 'rb') as pickle_file:
+            w2v_model = pickle.load(pickle_file)
         return w2v_model
 
 
@@ -48,8 +50,10 @@ def get_dominant_topic(new_docs, dictionary, tfidf, topic_model, models_path):
 
 
 def get_best_word2vec_model(algorithm, new_docs, path):
-    dictionary = pickle.load(open(path + "dataset.dict", 'rb'))
-    tfidf = pickle.load(open(path + "dataset.tfidf_model", 'rb'))
+    with open(open(path + "dataset.dict"), 'rb') as pickle_file:
+        dictionary = pickle.load(pickle_file)
+    with open(open(path + "dataset.tfidf_model"), 'rb') as pickle_file:
+        tfidf = pickle.load(pickle_file)
 
     df = pd.DataFrame(new_docs, columns=["description"])
     df["description"] = pre_process(df[['description']])
@@ -70,7 +74,8 @@ def get_best_word2vec_model(algorithm, new_docs, path):
                                                  word2vec_models_path)
     elif algorithm == "hdp":
         model_path = path + 'hdp/model/hdp.model'
-        hdp_model = pickle.load(open(model_path, 'rb'))
+        with open(open(model_path), 'rb') as pickle_file:
+            hdp_model = pickle.load(pickle_file)
         word2vec_models_path = path + 'hdp/word2vec_models/'
         word2vec_model_list = get_dominant_topic(new_preprocessed_docs,
                                                  dictionary, tfidf, hdp_model,

@@ -20,8 +20,10 @@ def load_dictionary_and_tfidf_corpus(dataset, folder_path):
     tfidf_path = folder_path + "tfidf_model"
     tfidf_corpus_path = folder_path + "tfidf_corpus"
     try:
-        dictionary = pickle.load(open(dictionary_path, "rb"))
-        corpus_tfidf = pickle.load(open(tfidf_corpus_path, "rb"))
+        with open(dictionary_path, 'rb') as pickle_file:
+            dictionary = pickle.load(pickle_file)
+        with open(tfidf_corpus_path, 'rb') as pickle_file:
+            corpus_tfidf = pickle.load(pickle_file)
     except (OSError, IOError) as e:
         dictionary = gensim.corpora.Dictionary(dataset)
         pickle.dump(dictionary, open(dictionary_path, "wb"))
