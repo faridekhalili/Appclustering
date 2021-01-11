@@ -3,9 +3,25 @@ import pandas as pd
 import pickle
 import toml
 import argparse
-import re
 from ast import literal_eval
 from gensim.models.ldamulticore import LdaMulticore
+from requests.exceptions import ReadTimeout, ConnectionError, HTTPError
+from play_scraper import details
+import time
+
+
+def app_details(app_id: str) -> dict:
+    for i in range(3):
+        try:
+            return details(app_id)
+        except (ReadTimeout, ConnectionError):
+            print(f"ReadTimeout error, waiting for {str(i ** 3)} seconds.")
+        except (HTTPError, ValueError):
+            print("url for %s not found" % app_id)
+            return
+        except AttributeError:
+            print("AttributeError")
+        time.sleep(i ** 3)
 
 
 def get_dominant_topic(new_docs, dictionary, tfidf, topic_model):
@@ -21,27 +37,27 @@ def get_dominant_topic(new_docs, dictionary, tfidf, topic_model):
     return dominant_topic
 
 
-def get_required_files_and_models(query_doc, path):
+def get_required_models(path):
     with open(path + "dictionary", 'rb') as pickle_file:
         dictionary = pickle.load(pickle_file)
     with open(path + "tfidf_model", 'rb') as pickle_file:
         tfidf = pickle.load(pickle_file)
     topic_model = LdaMulticore.load(path + "model")
-    with open(query_doc, 'r') as file:
-        application_description = file.read().replace('\n', '')
-    df = pd.DataFrame(application_description, columns=["description"])
+    return dictionary, tfidf, topic_model
+
+
+def get_preprocessed_desc(desc):
+    df = pd.DataFrame(desc, columns=["description"])
     df["description"] = pre_process(df[['description']])
     preprocessed_application_description = [literal_eval(x) for x in list(df["description"])]
-    return dictionary, tfidf, topic_model, preprocessed_application_description
+    return preprocessed_application_description
 
 
-def get_best_word_embedding_model(algorithm, query_doc, path):
-    dictionary, tfidf, topic_model, preprocessed_application_description = \
-        get_required_files_and_models(query_doc, path)
-
+def get_best_word_embedding_model(algorithm, desc, path):
+    dictionary, tfidf, topic_model = get_required_models(path)
+    preprocessed_application_description = get_preprocessed_desc(desc)
     dominant_topic = get_dominant_topic(preprocessed_application_description, dictionary,
                                         tfidf, topic_model)
-
     model_path = path + algorithm + "_models/model_" + str(dominant_topic)
     return model_path
 
@@ -50,30 +66,41 @@ def check_inputs(args):
     flag = False
     if args.algorithm is None:
         args.algorithm = "word2vec"
-    if args.file_name is None:
-        print("You have to provide the file name(a .txt) where the description of the algorithm of your query resides.")
-        flag = True
-    if re.search('.txt', args.file_name) is None:
-        print("Your file name must be a .txt")
+    if args.app_name is None:
+        print("You have to provide the name of the application you want to find a word embedding model for.")
         flag = True
     return flag, args
 
 
+def get_description(best_topic_model_path, app_name):
+    df = pd.read_csv(best_topic_model_path)
+    tdf = df[df["app_name"] == app_name]
+    if len(tdf) != 1:
+        print(str(len(df)) + "application ids found for this application name while it should have been 1.")
+        return
+    details = app_details(list(tdf["app_id"])[0])
+    if details is None:
+        return
+    desc = details["description"]
+    return desc
+
+
 def main():
     conf = toml.load('config.toml')
-    query_input_path = conf['query_input_path']
+    app_name_to_id_path = conf['app_name_to_id_path']
     query_result_path = conf['query_result_path']
     best_topic_model_path = conf['best_topic_model_path']
     parser = argparse.ArgumentParser(description='word embedding retrieving script')
     parser.add_argument('--algorithm', dest='algorithm', type=str, help='word embedding algorithm')
-    parser.add_argument('--file_name', dest='file_name', type=str,
-                        help='The file name of where the query resides')
+    parser.add_argument('--app_name', dest='app_name', type=str,
+                        help='The name of the application you want to find the word embedding model for')
     args = parser.parse_args()
     flag, args = check_inputs(args)
     if flag:
         return
-    model_path = get_best_word_embedding_model(args.algorithm, query_input_path +
-                                               args.file_name, best_topic_model_path)
+    desc = get_description(app_name_to_id_path, args.app_name)
+    model_path = get_best_word_embedding_model(args.algorithm, desc,
+                                               best_topic_model_path)
     f = open(query_result_path + "word_embedding_path.txt", "w")
     f.write(model_path)
     f.close()

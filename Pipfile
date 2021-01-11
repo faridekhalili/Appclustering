@@ -13,6 +13,7 @@ nltk = "==3.5"
 pandas = "==1.1.1"
 numpy = "==1.19.1"
 langdetect = "*"
+details = "*"
 
 [requires]
 python_version = "3.8"
