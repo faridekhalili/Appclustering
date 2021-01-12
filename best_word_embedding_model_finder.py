@@ -58,7 +58,11 @@ def get_best_word_embedding_model(algorithm, desc, path):
     preprocessed_application_description = get_preprocessed_desc(desc)
     dominant_topic = get_dominant_topic(preprocessed_application_description, dictionary,
                                         tfidf, topic_model)
-    model_path = path + algorithm + "_models/model_" + str(dominant_topic)
+    if algorithm == "glove":
+        model_path = path + algorithm + "_models/word2vec_format/" +\
+                     str(dominant_topic)+".txt"
+    else:
+        model_path = path + algorithm + "_models/model_" + str(dominant_topic)
     return model_path
 
 

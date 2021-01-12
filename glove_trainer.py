@@ -5,7 +5,23 @@ from glove import Corpus, Glove
 from utils import *
 
 
-def glove_trainer(df, model_path):
+def write_word2vec_format(model, path):
+    f = open(path, 'a')
+    words = list(model.dictionary.keys())
+    f.write(str(len(words)) + " ")
+    f.write(str(len(model.word_vectors[model.dictionary[words[0]]])))
+    f.write("\n")
+    for i in range(len(words)):
+        current_word = words[i]
+        current_word_vector = model.word_vectors[model.dictionary[current_word]]
+        f.write(current_word)
+        for j in range(len(current_word_vector)):
+            f.write(" " + str(current_word_vector[j]))
+        f.write("\n")
+
+
+def glove_trainer(df, model_path, model_number):
+    model_name = model_path + "model_" + str(model_number)
     list_of_tokens = list(df["description"])
     print(list_of_tokens[0])
     if isinstance(list_of_tokens[0], str):
@@ -18,7 +34,8 @@ def glove_trainer(df, model_path):
 
     glove.fit(corpus.matrix, epochs=30, no_threads=4, verbose=True)
     glove.add_dictionary(corpus.dictionary)
-    glove.save('glove.model')
+    glove.save(model_name)
+    write_word2vec_format(glove, "glove_models/word2vec_format/" + str(model_number) + ".txt")
     print("Time taken to train the glove model: " + str(int((time.time() - start_time) / 60)) + ' minutes\n')
     glove.save(model_path)
 
@@ -29,8 +46,8 @@ def extract_glove_models(folder_path):
     start_all_time = time.time()
     for category, df_category in extended_df.groupby('topic'):
         start_time = time.time()
-        model_name = glove_models_path + "model_" + str(category)
-        glove_trainer(df=df_category, model_path=model_name)
+        glove_trainer(df=df_category, model_path=glove_models_path,
+                      model_number=category)
         write_to_file(
             "Time taken to train the " + str(category) + "th glove model: " +
             str(int((time.time() - start_time) / 60)) + ' minutes\n')
