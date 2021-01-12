@@ -76,8 +76,8 @@ def check_inputs(args):
     return flag, args
 
 
-def get_description(best_topic_model_path, app_name):
-    df = pd.read_csv(best_topic_model_path)
+def get_description(app_name_to_id_path, app_name):
+    df = pd.read_csv(app_name_to_id_path)
     tdf = df[df["app_name"] == app_name]
     if len(tdf) != 1:
         print(str(len(df)) + "application ids found for this application name while it should have been 1.")
@@ -105,7 +105,8 @@ def main():
     desc = get_description(app_name_to_id_path, args.app_name)
     model_path = get_best_word_embedding_model(args.algorithm, desc,
                                                best_topic_model_path)
-    f = open(query_result_path + "word_embedding_path.txt", "w")
+    f = open(query_result_path + args.app_name+
+             "_"+args.algorithm+".txt", "w")
     f.write(model_path)
     f.close()
 

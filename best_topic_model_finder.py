@@ -34,8 +34,8 @@ def divide_into_clusters(model, df, folder_path, algorithm):
     topic_clusters, remove_indices = extract_dominant_topics(model, df, folder_path)
     df.drop(remove_indices, inplace=True)
     df.reset_index(drop=True, inplace=True)
-    extended_df = pd.DataFrame(list(zip(list(df["description"]), topic_clusters, list(df["category"]))),
-                               columns=['description', 'topic', 'category'])
+    extended_df = pd.DataFrame(list(zip(list(df["description"]), topic_clusters, list(df["category"]), list(df["app_id"]))),
+                               columns=['description', 'topic', 'category', 'app_id'])
     extended_df.to_csv(folder_path + algorithm + '/labeled.csv')
     print("divide_into_clusters")
 
