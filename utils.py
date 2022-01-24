@@ -38,14 +38,14 @@ def load_dictionary_and_tfidf_corpus(dataset, folder_path):
 def get_args():
     parser = argparse.ArgumentParser(description='Topic modeling software')
     parser.add_argument('--algorithm', dest='algorithm', type=str, help='topic modeling algorithm')
-    parser.add_argument('--word_filter', dest='word_filter', type=str, help='top_n or gaussian')
-    parser.add_argument('--document_filter', dest='document_filter', type=str, help='top_n or gaussian')
+    parser.add_argument('--word_filter', dest='word_filter', type=str, help='frequency or gaussian')
+    parser.add_argument('--document_filter', dest='document_filter', type=str, help='study or top-n or gaussian')
     parser.add_argument('--min', dest='min_topics', type=int, help='min number of topics')
     parser.add_argument('--max', dest='max_topics', type=int, help='max number of topics')
     parser.add_argument('--step', dest='step_topics', type=int, help='step to increment')
     args = parser.parse_args()
     if args.word_filter is None:
-        args.word_filter = "manual_bound"
+        args.word_filter = "frequency"
     if args.document_filter is None:
         args.document_filter = "gaussian"
     return args
@@ -82,7 +82,7 @@ def drop_extra_columns(df):
 def filter_words(df, texts, word_filter):
     dictionary = gensim.corpora.Dictionary(texts)
     filtered_words = set()
-    if word_filter == "manual_bound":
+    if word_filter == "frequency":
         for k, v in dictionary.dfs.items():
             if v < 0.005 * len(texts) or v > 0.15 * len(texts):
                 filtered_words.add(dictionary[k])
@@ -104,12 +104,15 @@ def filter_words(df, texts, word_filter):
 def filter_documents(df, doc_filter):
     lower_bound = 0
     upper_bound = max(list(df['len']))
-    if doc_filter == "manual_bound":
-        lower_bound = 6
+    if doc_filter == "study":
+        lower_bound = 50
+        upper_bound = 1000
+    if doc_filter == "top-n":
         df = df.sort_values(by=['len'])
-        upper_bound = df.iloc[int(len(df)*98/100)]["len"]
+        lower_bound = df.iloc[int(len(df)*5/100)]["len"]
+        upper_bound = df.iloc[int(len(df)*95/100)]["len"]
     elif doc_filter == "gaussian":
-        lower_bound, upper_bound = get_guassian_boundary(list(df['len']), 15)
+        lower_bound, upper_bound = get_guassian_boundary(list(df['len']), 17)
 
     df = df[df['len'] > lower_bound]
     df = df[df['len'] < upper_bound]
