@@ -40,9 +40,9 @@ def glove_trainer(df, model_path, model_number):
     glove.save(model_path)
 
 
-def extract_glove_models(folder_path):
-    extended_df = pd.read_csv(folder_path + 'labeled.csv')
-    glove_models_path = folder_path + 'glove_models/'
+def extract_glove_models(best_topic_model_path):
+    extended_df = pd.read_csv(best_topic_model_path + 'labeled.csv')
+    glove_models_path = best_topic_model_path + 'glove_models/'
     start_all_time = time.time()
     for category, df_category in extended_df.groupby('topic'):
         start_time = time.time()

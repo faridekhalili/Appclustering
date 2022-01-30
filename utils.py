@@ -44,10 +44,17 @@ def get_args():
     parser.add_argument('--max', dest='max_topics', type=int, help='max number of topics')
     parser.add_argument('--step', dest='step_topics', type=int, help='step to increment')
     args = parser.parse_args()
+    if args.algorithm is None:
+        args.algorithm = "lda"
     if args.word_filter is None:
         args.word_filter = "frequency"
     if args.document_filter is None:
         args.document_filter = "gaussian"
+    if args.min_topics is None or args.max_topics is None or args.step_topics is None:
+        args.min_topics = 27
+        args.max_topics = 28
+        args.step_topics = 1
+
     return args
 
 
@@ -80,8 +87,11 @@ def drop_extra_columns(df):
 
 
 def filter_words(df, texts, word_filter):
+    filtered_words = {"system", "service", "app", "application", "http", "android", "google", "version", "permission",\
+        "storage", "access", "update", "smartphone", "mobile", "cellphone", "apps", "setting", "connect", "offline",\
+        "online", "install", "favorite", "data", "internet", "tablet", "connection","content", "collection", "allows",\
+        "click" , "privacy", "function", "device", "website", "ad"}
     dictionary = gensim.corpora.Dictionary(texts)
-    filtered_words = set()
     if word_filter == "frequency":
         for k, v in dictionary.dfs.items():
             if v < 0.005 * len(texts) or v > 0.15 * len(texts):

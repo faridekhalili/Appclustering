@@ -13,10 +13,7 @@ def get_range_file_name():
 
 class TopicModel(ABC):
     def __init__(self, dataset, folder_path, algorithm, args):
-        if args.min_topics is None or args.max_topics is None or args.step_topics is None:
-            self.num_topics = list(range(1, 50, 10))
-        else:
-            self.num_topics = list(range(args.min_topics, args.max_topics, args.step_topics))
+        self.num_topics = list(range(args.min_topics, args.max_topics, args.step_topics))
         self.dataset = dataset
         self.folder_path = folder_path
         self.algorithm = algorithm
@@ -155,8 +152,7 @@ def main():
     print("texts created")
     del df
 
-    if args.algorithm is None:
-        args.algorithm = "lda"
+    
 
     if args.algorithm == "hdp":
         hdp_obj = HDP(texts, topic_modeling_path, "hdp")
