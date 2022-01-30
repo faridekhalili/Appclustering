@@ -1,8 +1,8 @@
-topic_modeling_path = './output/topic_modeling/'
-google_play_model_path = './output/google_play_categories/models/'
 preprocessed_data_path = './output/preprocessed.csv'
+topic_modeling_path = './output/topic_modeling/'
+best_topic_model_path = './output/best_topic_model/'
+google_play_model_path = './output/google_play_categories/models/'
 english_db_path = './output/english_db.csv'
 database_path = './input/total-v2.db'
 app_name_to_id_path = "./input/app_name_to_id.csv"
 query_result_path = './output/query_result/'
-best_topic_model_path = './output/best_topic_model/'
