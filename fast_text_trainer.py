@@ -3,14 +3,15 @@ import time
 from gensim.models.fasttext import FastText
 from ast import literal_eval
 from utils import *
+import os
 
 
 def fast_text_trainer(df, model_path):
     list_of_tokens = list(df["description"])
-    print(list_of_tokens[0])
     if isinstance(list_of_tokens[0], str):
-        list_of_tokens = [literal_eval(x) for x in list_of_tokens]
-    print(list_of_tokens[0])
+        # list_of_tokens = [literal_eval(x) for x in list_of_tokens]
+        tokenized_data = df[['description']].applymap(lambda s: word_tokenize(s))
+        list_of_tokens = list(tokenized_data["description"])
     start_time = time.time()
     model = FastText(sentences=list_of_tokens,
                      sg=1,
@@ -23,9 +24,11 @@ def fast_text_trainer(df, model_path):
     model.save(model_path)
 
 
-def extract_fast_text_models(folder_path):
-    extended_df = pd.read_csv(folder_path + 'labeled.csv')
-    fast_text_models_path = folder_path + 'fast_text_models/'
+def extract_fast_text_models(folder_path, algorithm):
+    extended_df = pd.read_csv(folder_path + algorithm+ '/labeled.csv')
+    fast_text_models_path = folder_path + algorithm+ '/fast_text_models/'
+    if not os.path.exists(fast_text_models_path):
+        os.makedirs(fast_text_models_path)
     start_all_time = time.time()
     for category, df_category in extended_df.groupby('topic'):
         start_time = time.time()
@@ -45,9 +48,12 @@ def main():
     best_topic_model_path = conf['best_topic_model_path']
     parser = argparse.ArgumentParser(description='Topic modeling software')
     parser.add_argument("--modelNumbers", nargs="*")
+    parser.add_argument('--algorithm', dest='algorithm', type=str, help='topic modeling algorithm')
     args = parser.parse_args()
+    if args.algorithm is None:
+        args.algorithm = "lda"
     if args.modelNumbers is None:
-        extract_fast_text_models(best_topic_model_path)
+        extract_fast_text_models(best_topic_model_path, args.algorithm)
     else:
         extended_df = pd.read_csv(best_topic_model_path + '/labeled.csv')
         for model_number in args.modelNumbers:

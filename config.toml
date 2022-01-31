@@ -1,5 +1,6 @@
-database_path = './input/samples.db'
-preprocessed_data_path = './output/test.csv'
+
+database_path = './input/total-v2.db'
+preprocessed_data_path = './output/preprocessed.csv'
 topic_modeling_path = './output/topic_modeling/'
 best_topic_model_path = './output/best_topic_model/'
 google_play_model_path = './output/google_play_categories/models/'

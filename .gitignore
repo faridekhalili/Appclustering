@@ -3,7 +3,6 @@
 __pycache__/
 venv
 input/total-v1.db
-input
 output
 .ipynb_checkpoints
 topic_models
