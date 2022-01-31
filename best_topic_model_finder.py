@@ -62,9 +62,6 @@ def get_best_topic_model(df, topic_modeling_path, algorithm):
 
 
 def get_optimal_number_from_cv(algorithm, topic_modeling_path):
-    print(topic_modeling_path)
-    print(algorithm)
-    print()
     path = topic_modeling_path + algorithm
     all_files = glob.glob(path + "/*.csv")
     li = []

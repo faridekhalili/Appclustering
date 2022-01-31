@@ -3,12 +3,15 @@ import time
 from gensim.models import Word2Vec
 from ast import literal_eval
 from utils import *
+import os
 
 
 def word2vec_trainer(df, model_path):
     list_of_tokens = list(df["description"])
     if isinstance(list_of_tokens[0], str):
-        list_of_tokens = [literal_eval(x) for x in list_of_tokens]
+        # list_of_tokens = [literal_eval(x) for x in list_of_tokens]
+        tokenized_data = df[['description']].applymap(lambda s: word_tokenize(s))
+        list_of_tokens = list(tokenized_data["description"])
     start_time = time.time()
     model = Word2Vec(sentences=list_of_tokens,
                      sg=1,
@@ -22,9 +25,11 @@ def word2vec_trainer(df, model_path):
     model.save(model_path)
 
 
-def extract_word2vec_models(folder_path):
-    extended_df = pd.read_csv(folder_path + 'labeled.csv')
-    word2vec_models_path = folder_path + 'word2vec_models/'
+def extract_word2vec_models(folder_path, algorithm):
+    extended_df = pd.read_csv(folder_path + algorithm+ '/labeled.csv')
+    word2vec_models_path = folder_path + algorithm+ '/word2vec_models/'
+    if not os.path.exists(word2vec_models_path):
+        os.makedirs(word2vec_models_path)
     start_all_time = time.time()
     for category, df_category in extended_df.groupby('topic'):
         start_time = time.time()
@@ -44,9 +49,12 @@ def main():
     best_topic_model_path = conf['best_topic_model_path']
     parser = argparse.ArgumentParser(description='Topic modeling software')
     parser.add_argument("--modelNumbers", nargs="*")
+    parser.add_argument('--algorithm', dest='algorithm', type=str, help='topic modeling algorithm')
     args = parser.parse_args()
+    if args.algorithm is None:
+        args.algorithm = "lda"
     if args.modelNumbers is None:
-        extract_word2vec_models(best_topic_model_path)
+        extract_word2vec_models(best_topic_model_path, args.algorithm)
     else:
         extended_df = pd.read_csv(best_topic_model_path + '/labeled.csv')
         for model_number in args.modelNumbers:

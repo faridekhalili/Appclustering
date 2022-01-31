@@ -14,7 +14,7 @@ conf = toml.load('config.toml')
 topic_modeling_path = conf['topic_modeling_path']
 
 def write_to_file(message):
-    f = open(topic_modeling_path+'timings.txt', 'a')
+    f = open(topic_modeling_path+'log.txt', 'a')
     f.write(message)
 
 
