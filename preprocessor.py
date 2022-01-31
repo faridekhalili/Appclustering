@@ -91,7 +91,6 @@ def main():
     df = pd.read_sql_query("SELECT * from app", con)
     con.close()
     df = prune_non_english(df)
-    df.to_csv(conf["english_db_path"])
     df["description"] = pre_process(df[['description']])
     df.dropna(subset=["description"], inplace=True)
     df = df[df["description"] != ""]

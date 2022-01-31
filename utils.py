@@ -1,3 +1,4 @@
+import toml
 import argparse
 import pickle
 import gensim
@@ -9,9 +10,11 @@ import nltk
 nltk.download('punkt')
 from nltk.tokenize import word_tokenize
 
+conf = toml.load('config.toml')
+topic_modeling_path = conf['topic_modeling_path']
 
 def write_to_file(message):
-    f = open('./output/topic_modeling/timings.txt', 'a')
+    f = open(topic_modeling_path+'timings.txt', 'a')
     f.write(message)
 
 
@@ -137,5 +140,5 @@ def prune_dataset(df, word_filter, doc_filter):
     df = drop_extra_columns(df)
     df = filter_words(df, texts, word_filter)
     df = filter_documents(df, doc_filter)
-    df.to_csv("./output/D_" + doc_filter + "_W_" + word_filter + ".csv")
+    # df.to_csv("./output/D_" + doc_filter + "_W_" + word_filter + ".csv")
     return df
