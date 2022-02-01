@@ -1,8 +1,9 @@
-import toml
 import time
 from ast import literal_eval
 from glove import Corpus, Glove
+print("utils")
 from utils import *
+print("utils")
 import os
 
 
@@ -42,7 +43,6 @@ def glove_trainer(df, model_path, model_number):
         os.makedirs(model_path+"/word2vec_format/")
     write_word2vec_format(glove, model_path+"/word2vec_format/" + str(model_number) + ".txt")
     print("Time taken to train the glove model: " + str(int((time.time() - start_time) / 60)) + ' minutes\n')
-    glove.save(model_path)
 
 
 def extract_glove_models(folder_path, algorithm):

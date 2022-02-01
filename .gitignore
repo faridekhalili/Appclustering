@@ -1,9 +1,10 @@
 .vscode/
 .idea/
 __pycache__/
-venv
+venv*
 input/total-v1.db
 output
 .ipynb_checkpoints
 topic_models
 dictionary_and_corpus
+*.pyc
