@@ -1,9 +1,7 @@
 import time
 from ast import literal_eval
 from glove import Corpus, Glove
-print("utils")
 from utils import *
-print("utils")
 import os
 
 
