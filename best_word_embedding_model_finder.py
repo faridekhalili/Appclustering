@@ -17,7 +17,7 @@ from nltk.tokenize import word_tokenize
 def get_dominant_topic(new_docs, dictionary, tfidf, topic_model):
     for doc in list(new_docs):
         vec_bow = dictionary.doc2bow(doc)
-        vec_tfidf = tfidf[vec_bow]pickle.load
+        vec_tfidf = tfidf[vec_bow]
         if len(topic_model[vec_tfidf]) == 0:
             print("can't find the model")
             return
