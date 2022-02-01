@@ -17,7 +17,7 @@ from nltk.tokenize import word_tokenize
 def get_dominant_topic(new_docs, dictionary, tfidf, topic_model):
     for doc in list(new_docs):
         vec_bow = dictionary.doc2bow(doc)
-        vec_tfidf = tfidf[vec_bow]
+        vec_tfidf = tfidf[vec_bow]pickle.load
         if len(topic_model[vec_tfidf]) == 0:
             print("can't find the model")
             return
@@ -58,14 +58,14 @@ def get_best_word_embedding_model(args, desc, best_topic_model_path, topic_model
     return model_path
 
 
-def app_details(app_id: str) -> dict:
+def app_details(app_id):
     for i in range(3):
         try:
             return details(app_id)
         except (ReadTimeout, ConnectionError):
-            print(f"ReadTimeout error, waiting for {str(i ** 3)} seconds.")
+            print("ReadTimeout error, waiting for "+str(i ** 3)+ "seconds.")
         except (HTTPError, ValueError):
-            print("url for %s not found" % app_id)
+            print("url for " + str(app_id) + "not found")
             return
         except AttributeError:
             print("AttributeError")
