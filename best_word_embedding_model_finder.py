@@ -54,7 +54,7 @@ def get_best_word_embedding_model(args, desc, best_topic_model_path, topic_model
         model_path = best_topic_model_path + args.algorithm + "/glove_models/word2vec_format/model_" +\
                      str(dominant_topic)+".txt"
     else:
-        model_path = best_topic_model_path + args.algorithm + "/" + args.word_embedding +"/model_" + str(dominant_topic)
+        model_path = best_topic_model_path + args.algorithm + "/" + args.word_embedding +"_models/model_" + str(dominant_topic)
     return model_path
 
 
@@ -90,7 +90,7 @@ def check_inputs(args):
     if args.algorithm is None:
         args.algorithm = "lda"
     if args.word_embedding is None:
-        args.word_embedding = "w2v"
+        args.word_embedding = "word2vec"
     if args.app_name is None:
         print("You have to provide the name of the application you want to find a word embedding model for.")
         flag = True

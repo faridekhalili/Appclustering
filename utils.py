@@ -53,9 +53,9 @@ def get_args():
     if args.algorithm is None:
         args.algorithm = "lda"
     if args.word_filter is None:
-        args.word_filter = "frequency"
+        args.word_filter = "s1"
     if args.document_filter is None:
-        args.document_filter = "gaussian"
+        args.document_filter = "s5"
     if args.min_topics is None or args.max_topics is None or args.step_topics is None:
         args.min_topics = 27
         args.max_topics = 28
@@ -98,13 +98,13 @@ def filter_words(df, texts, word_filter):
         "online", "install", "favorite", "data", "internet", "tablet", "connection","content", "collection", "allows",\
         "click" , "privacy", "function", "device", "website", "ad"}
     dictionary = gensim.corpora.Dictionary(texts)
-    if word_filter == "frequency":
+    if word_filter == "s1":
         for k, v in dictionary.dfs.items():
             if v < 0.005 * len(texts) or v > 0.15 * len(texts):
                 filtered_words.add(dictionary[k])
-    elif word_filter == "gaussian":
+    elif word_filter == "s2":
         word_frequencies = [v for k, v in dictionary.dfs.items()]
-        l, u = get_guassian_boundary(word_frequencies, 47)
+        l, u = get_guassian_boundary(word_frequencies, 45)
         for k, v in dictionary.dfs.items():
             if v < l or v > u:
                 filtered_words.add(dictionary[k])
@@ -120,14 +120,14 @@ def filter_words(df, texts, word_filter):
 def filter_documents(df, doc_filter):
     lower_bound = 0
     upper_bound = max(list(df['len']))
-    if doc_filter == "study":
+    if doc_filter == "s3":
         lower_bound = 50
         upper_bound = 1000
-    if doc_filter == "top-n":
+    if doc_filter == "s4":
         df = df.sort_values(by=['len'])
         lower_bound = df.iloc[int(len(df)*5/100)]["len"]
         upper_bound = df.iloc[int(len(df)*95/100)]["len"]
-    elif doc_filter == "gaussian":
+    elif doc_filter == "s5":
         lower_bound, upper_bound = get_guassian_boundary(list(df['len']), 17)
 
     df = df[df['len'] > lower_bound]
