@@ -1,5 +1,3 @@
-
-
 # Setup
 ---
 First, you need to connect to the docker container with the following command:
