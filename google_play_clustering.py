@@ -9,13 +9,13 @@ except Exception as e:
 def gp_cluster(df, model_path, word_embedding):
     plot_distribution(df, model_path + 'distribution.png', 'category')
     for category, df_category in df.groupby('category'):
-        if word_embedding == "w2v":
-            model_name = model_path + "word2vec_models/"+str(category) + ".model"
+        if word_embedding == "word2vec":
+            model_name = model_path + "word2vec_models/"+"model_" + str(category)
             if not os.path.exists(model_path + "word2vec_models/"):
                 os.makedirs(model_path + "word2vec_models/")
             word2vec_trainer(df_category, model_name)
         elif word_embedding == "fast_text":
-            model_name = model_path + "fast_text_models/"+str(category) + ".model"
+            model_name = model_path + "fast_text_models/"+"model_"+str(category)
             if not os.path.exists(model_path + "fast_text_models/"):
                 os.makedirs(model_path + "fast_text_models/")
             fast_text_trainer(df_category, model_name)
@@ -40,7 +40,7 @@ def main():
     parser.add_argument('--word_embedding', dest='word_embedding', type=str, help='word embedding algorithm')
     args = parser.parse_args()
     if args.word_embedding is None:
-        args.word_embedding = "w2v"
+        args.word_embedding = "word2vec"
     gp_cluster(df, conf["google_play_model_path"], args.word_embedding)
 
 
