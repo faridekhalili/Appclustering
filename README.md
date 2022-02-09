@@ -15,6 +15,7 @@ docker exec -it semantic_matching /bin/bash
 - root/ 
     1. Data/
     2.  Appclustering/
+    3.  semantic_matching/
 
 #### 1. Data:
 ---
@@ -75,7 +76,22 @@ python glove_trainer.py
 ```
 After runing the above commands the topic model should be stored in *./output/best_topic_model/lda/model/lda.model*. The word embedding models trained on subsets divided by this topic model will be stored in *./output/best_topic_model/lda/fast_text_models*, *./output/best_topic_model/lda/glove_models*, and *./output/best_topic_model/lda/word2vec_models*. 
 
+#### 3. semantic_matching:
+---
+1. Modify `config.yml` following entry:
+ - `model_dir` : path to the word embedding models with respect to `model_path` entry
 
+1. Activate venv, then run semantic matching
+```shell
+source venv/bin/activate
+```
+```shell
+python run_all_combinations.py
+```
+
+2. check the results
+    - MRR and top1 values in available the `final.csv`.
+    - Results of the table in the paper are available in `table_mrr.csv` and `tabel_top1.csv`
 # Setup
 ---
 In order to do the necessary setup in a new environemt, follow the following instructions.
@@ -214,7 +230,40 @@ In the above commands:
 2. *modelNumber* is the number of the subset (topic) you want to train a model on. The default value is set so that a word embedding model is trained on each and every one of the subsets.
 
 The word embedding models are stored under three different folders named with the word embedding algorithm under the directory **best_topic_model_path** specified in **config.toml**.
-# UNFINISHED
+##### Retrieving the best word embedding model
+
+To retrieve the best word embedding model for a given source application, we need to:
+1. Find the most fit model's address.
+2. Load the model.
+
+To retrieve the address, first activate **venv**, then run the following command:
+```sh
+python best_word_embedding_model_finder.py --algorithm "topic modeling algorithm" --word_embedding "word embedding algorithm" --app_name "The name of the source application"
+```
+In the command above:
+1. *algorithm* should be "lda", "lsa", or "hdp". The default value is "lda".
+2. *word_embedding* should be "word2vec", "fast_text", or "glove". The default value is "word2vec".
+3. *app_name* should be one of the subject application names specidied in */roor/Appclustering/input/app_name_to_id.csv*.
+
+This query returns the most fit word embedding model's path, and stores it in a txt file under the **query_result_path** directory specified in **config.toml**.
+
+In order to load and use these word embedding models you need to have the following lines of code in your script:
+- fast_text
+```sh
+from gensim.models import FastText
+fast_text_20 = FastText.load([MODEL_PATH])
+```
+- word2vec
+```sh
+from gensim.models import Word2Vec
+word2vec_20 = Word2Vec.load([MODEL_PATH])
+```
+- glove 
+```sh
+from gensim.models import KeyedVectors
+glove_20 = KeyedVectors.load_word2vec_format([MODEL_PATH])
+```
+In the above commands the MODEL_PATH is the path stored in the txt file generated in step 1.
 # CATEGORIES
 ---
 In order to train the word embdding models on subsets of GOOGLE-PLAY training set, divided by the googleplay's category metadata:
