@@ -1,5 +1,84 @@
+# Quick Start
+---
+We have set up a docker container that contains the results presented in the paper, and has the environment setup necessary to reproduce those results. 
+First you need to import the docker image and run the container:
+```sh
+docker import sm.tar sm
+docker run --name=semantic_matching sm sleep infinity
+```
+Then you need to run the commands in the docker container, so you'll need to go inside the container:
+```sh
+docker exec -it semantic_matching /bin/bash
+```
+### Directory
+---
+- root/ 
+    1. Data/
+    2.  Appclustering/
+
+#### 1. Data:
+---
+The data and models used in the paper are stored in */root/Data* . In this directory, you can find the followings:
+
+- **preprocessed.csv**: The GOOGLE-PLAY dataset after the canonical pre-processing steps.
+- **labeled.csv**: The GOOGLE-PLAY dataset labeled with the most dominant topic of each application description document, using the LDA model introduced in the paper.
+- *models/topic_modeling*: 
+    - **lda.model**: The LDA model introduced in the paper.
+    - **dictionary**:A mapping between words and their integer ids, based on the GOOGLE-PLAY dataset. It is required in training a topic model, estimating it's coherence score, and extracting the topic distribution of a document.
+    - **tfidf_model**: Required in  extracting the topic distribution of a new document.
+    - **tfidf_corpus**: The vectors of the TF-IDF values of the documents in GOOGLE-PLAY. It is required in training a topic model, estimating it's coherence score, and labeling the application description documents in GOOGLE-PLAY  dataset.
+- *models/word_embedding_models*: This directory contains the word embedding models trained based on the training sets introduced in the paper (first 5 rows of TABLE I). Under each of the following folders, there are three subfolders: *fast_text_models*, *glove_models*, *word2vec_models* each of which contains the representative word embedding models.
+    - *BLOGS*
+    - *CATEGORIES*: Only the word embedding models trained on the categories of our subject applications are stored here.
+    - *GOOGLE-PLAY*
+    - *MANUALS*
+    - *TOPICS*: Only the word embedding models trained on the topics of our subject applications are stored here.
+    
+
+> **Note:** Word Mover's distance (WM) uses word2vec vector embedding of words.
+
+#### 2. Appclustering:
+---
+
+You can follow the following steps to reproduce the results:
+> **Note:** The default values are set to produce the data and models presented in the paper. To produce these results, you can follow the following steps without worrying about the details. More detailed description is available in the next section. 
+
+1. Activate **venv**:
+ ```sh
+source venv/bin/activate
+```
+2.
+```sh
+python topic_modeling.py
+```
+3.
+```sh
+python best_topic_model_finder.py
+```
+4.
+```sh
+python w2v_trainer.py
+```
+```sh
+python fast_text_trainer.py
+```
+5. deactivate **venv** and activate **venv_glove**:
+```sh
+deactivate
+```
+```sh
+source venv_glove/bin/activate
+```
+6.
+```sh
+python glove_trainer.py
+```
+After runing the above commands the topic model should be stored in *./output/best_topic_model/lda/model/lda.model*. The word embedding models trained on subsets divided by this topic model will be stored in *./output/best_topic_model/lda/fast_text_models*, *./output/best_topic_model/lda/glove_models*, and *./output/best_topic_model/lda/word2vec_models*. 
+
+
 # Setup
 ---
+In order to do the necessary setup in a new environemt, follow the following instructions.
 ##### Requirements:
 
 - virtualenv
@@ -21,11 +100,10 @@ sudo apt install virtualenv python3.8 python3.8-dev python2.7 python2.7-dev g++ 
 > **Note:** We need an environment **venv** created with python3.8 and requirements specified in the requirements.txt. We also need an environment **venv_glove** created with python2.7 and requirements specified in the requirements_glove.txt, which is necessary to train and use glove models. 
 
 To set up a virtual environment, please follow the following steps:
-1. create a virtual enviroment:
+1. Create the virtual enviroments:
 ```sh
 virtualenv -p /usr/bin/python3.8 venv
 ```
-or
 ```sh
 virtualenv -p /usr/bin/python2.7 venv_glove
 ```
@@ -37,41 +115,11 @@ or
 ```sh
 source venv_glove/bin/activate
 ```
-# Directory
----
-First, you need to connect to the docker container with the following command:
+To deactivate an environemt:
 ```sh
-docker exec -it semantic_matching /bin/bash
+deactivate
 ```
-The following directory contains the data and models we used, and the code you can use to do additional experiments.
-- root/ 
-    1. Data/
-    2.  Appclustering/
-
-#### 1. Data:
----
-The data and models used in the paper are stored in */root/Data* . In this directory, you can find the followings:
-
-- **preprocessed.csv**: The GOOGLE-PLAY dataset after the canonical pre-processing steps.
-- **labeled.csv**: The GOOGLE-PLAY dataset labeled with the most dominant topic of each application description document, using the LDA model introduced in the paper.
-- *models/topic_modeling*: 
-    - **lda.model**: The LDA model introduced in the paper.
-    - **dictionary**:A mapping between words and their integer ids, based on the GOOGLE-PLAY dataset. It is required in training a topic model, estimating it's coherence score, and extracting the topic distribution of a document.
-    - **tfidf_model**: Required in  extracting the topic distribution of a new document.
-    - **tfidf_corpus**: The vectors of the TF-IDF values of the documents in GOOGLE-PLAY. It is required in training a topic model, estimating it's coherence score, and labeling the application description documents in GOOGLE-PLAY  dataset.
-- *models/word_embedding_models*: The word embedding models trained based on the training sets introduced in the paper (first 5 rows of TABLE I). Under each of the following folders, there are three subfolders: *fast_text_models*, *glove_models*, *word2vec_models*.
-    - *BLOGS*
-    - *CATEGORIES*: Only the word embedding models trained on the categories of our subject applications are stored here.
-    - *GOOGLE-PLAY*
-    - *MANUALS*
-    - *TOPICS*: Only the word embedding models trained on the topics of our subject applications are stored here.
-    
-
-> **Note:** Word Mover's distance (WM) uses word2vec vector embedding of words.
-
-#### 2. Appclustering:
----
-In order to reproduce the results, you need to follow the following steps:
+In order to reproduce the represented models and results, you need to follow the following steps:
 1. Run *topic_modeling.py*
     - Inputs:
         - *preprocessd.csv*
@@ -89,13 +137,9 @@ In order to reproduce the results, you need to follow the following steps:
         - *preprocessed.csv*
     - Outputs:
         - The topic model with the highest coherence score.
-        - *labeled.csv*: preprocessed.csv labeled with the dominant topic in the topic distribution of each of the application description documents.
+        - *labeled.csv*: The preprocessed train set labeled with the dominant topic in the topic distribution of each of the application description documents.
 3. Run word embedding trainer scripts (*glove_trainer.py*, *w2v_trainer.py*, *fast_text_trainer.py*)
     - Inputs:
-        - The topic model with the highest coherence score.
-        - *dictionary*
-        - *tfidf_model*
-        - *tfidf_corpus*
         - *labeled.csv*
     - Outputs:
         - Word embedding models trained on each of the subsets divided by topics.
@@ -109,7 +153,7 @@ In order to reproduce the results, you need to follow the following steps:
     - Inputs:
     - Outputs:
 
-#### How to do experiments
+#### How to run new experiments
 ---
 In order to do customized experiments, please follow the following instructions:
 > **Note:** First of all, you'll need to clear the data and models resultant from the previous experiments. You can do so with *clear* script:
@@ -149,7 +193,7 @@ This script will choose the best topic model automatically according to the cohe
 
 ##### Training word embedding models
 
-Word embedding models can be trained on subsets of the training datase, clustered by the best topic models trained in each of the topic modeling algorithms.
+Word embedding models can be trained on subsets of the training dataset, clustered by the best topic models trained in each of the topic modeling algorithms.
 
 To train word embedding models trained on these subsets seperated by the topics:
 
@@ -169,27 +213,9 @@ In the above commands:
 1. *algorithm* should be "lda", "lsa", or "hdp". The default value is "lda".
 2. *modelNumber* is the number of the subset (topic) you want to train a model on. The default value is set so that a word embedding model is trained on each and every one of the subsets.
 
-Three different folders with the name of the word embedding algorithms are created under the directory **best_topic_model_path** specified in **config.toml**.
-##### Retrieving the best word embedding model
-
-To retrieve the best word embedding model for a given source application, we need to:
-1. Find the most fit model's address.
-2. Load the model.
-
-To retrieve the address, first activate **venv**, then run the following command:
-```sh
-python best_word_embedding_model_finder.py --algorithm "topic modeling algorithm" --word_embedding "word embedding algorithm" --app_name "The name of the source application"
-```
-In the command above:
-1. *algorithm* should be "lda", "lsa", or "hdp". The default value is "lda".
-2. *word_embedding* should be "word2vec", "fast_text", or "glove". The default value is "word2vec".
-3. *app_name* should be one of the subject application names specidied in */roor/Appclustering/input/app_name_to_id.csv*.
-
-This query returns the most fit word embedding model's path, and stores it in a txt file under the **query_result_path** directory specified in **config.toml**.
-
-To load and use these models:
+The word embedding models are stored under three different folders named with the word embedding algorithm under the directory **best_topic_model_path** specified in **config.toml**.
 # UNFINISHED
-#### CATEGORIES
+# CATEGORIES
 ---
 In order to train the word embdding models on subsets of GOOGLE-PLAY training set, divided by the googleplay's category metadata:
 
