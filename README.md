@@ -1,10 +1,11 @@
-# Quick Start
+# Quick Start 
 ---
 We have set up a docker container that contains the results presented in the paper, and has the environment setup necessary to reproduce those results. 
-First you need to import the docker image and run the container:
+First you need to install [docker](https://docs.docker.com/get-docker/) if you don't have it. Then import the docker image and run the container:
+
 ```sh
-docker import sm.tar sm
-docker run --name=semantic_matching sm sleep infinity
+docker import semantic_matching.tar semantic_matching
+docker run --name=semantic_matching semantic_matching sleep infinity
 ```
 Then you need to run the commands in the docker container, so you'll need to go inside the container:
 ```sh
@@ -17,7 +18,7 @@ docker exec -it semantic_matching /bin/bash
     2.  Appclustering/
     3.  semantic_matching/
 
-#### 1. Data:
+## 1. Data:
 ---
 The data and models used in the paper are stored in */root/Data* . In this directory, you can find the followings:
 
@@ -38,31 +39,34 @@ The data and models used in the paper are stored in */root/Data* . In this direc
 
 > **Note:** Word Mover's distance (WM) uses word2vec vector embedding of words.
 
-#### 2. Appclustering:
 ---
-
 You can follow the following steps to reproduce the results:
 > **Note:** The default values are set to produce the data and models presented in the paper. To produce these results, you can follow the following steps without worrying about the details. More detailed description is available in the next section. 
+
+## 2. AppClustering:
+---
+
 
 1. Activate **venv**:
  ```sh
 source venv/bin/activate
 ```
-2.
+2. Create an LDA topic modeling
 ```sh
 python topic_modeling.py
 ```
-3.
+3. Find the best model and labeling documents
 ```sh
 python best_topic_model_finder.py
 ```
-4.
+4. Train W2V and FAST embedding technique models for the topic model
 ```sh
 python w2v_trainer.py
 ```
 ```sh
 python fast_text_trainer.py
 ```
+
 5. deactivate **venv** and activate **venv_glove**:
 ```sh
 deactivate
@@ -70,38 +74,69 @@ deactivate
 ```sh
 source venv_glove/bin/activate
 ```
-6.
+6. Train GloVe embedding technique models for the topic model
 ```sh
 python glove_trainer.py
 ```
-After runing the above commands the topic model should be stored in *./output/best_topic_model/lda/model/lda.model*. The word embedding models trained on subsets divided by this topic model will be stored in *./output/best_topic_model/lda/fast_text_models*, *./output/best_topic_model/lda/glove_models*, and *./output/best_topic_model/lda/word2vec_models*. 
 
-#### 3. semantic_matching:
+After runing the above commands the topic model are stored in `./output/best_topic_model/lda/model/lda.model`. The word embedding models trained on subsets divided by the topic model are stored in `./output/best_topic_model/lda/fast_text_models`, `./output/best_topic_model/lda/glove_models`, and `./output/best_topic_model/lda/word2vec_models`. 
+
+#### CATEGORIES
 ---
-1. Modify `config.yml` following entry:
- - `model_dir` : path to the word embedding models with respect to `model_path` entry
+1. Train W2V and FAST embedding technique models for the google categories
 
-1. Activate venv, then run semantic matching
+```sh
+python google_play_clustering.py -- word_embedding "word2vec"
+```
+```sh
+python google_play_clustering.py -- word_embedding "fast_text"
+```
+
+5. deactivate **venv** and activate **venv_glove**:
+```sh
+deactivate
+```
+```sh
+source venv_glove/bin/activate
+```
+6. Train GloVe embedding technique models for the google categories
+```sh
+python google_play_clustering.py -- word_embedding "glove"
+```
+
+
+Runing this scripts results in word embedding models stored in **google_play_model_path** specified in **config.toml**.
+
+
+## 3. semantic matching:
+---
+
+1. Activate virtual env
 ```shell
 source venv/bin/activate
 ```
+2. Run semantic matching
 ```shell
 python run_all_combinations.py
 ```
-
-2. check the results
+3. check the results
     - MRR and top1 values in available the `final.csv`.
     - Results of the table in the paper are available in `table_mrr.csv` and `tabel_top1.csv`
-# Setup
+> Semantic matching uses the models provided in the `Data` directory. If you like to use newly created models in the past steps. You have to move them to `Data` directory recpecting the existing structure. 
+# Setup for new  environment
 ---
 In order to do the necessary setup in a new environemt, follow the following instructions.
-##### Requirements:
+### Requirements:
 
 - virtualenv
 - python3.8
 - python3.8-dev
 - python2.7
 - python2.7-dev
+- python3.7
+- python3.7-dev
+- build-essential
+- libssl-dev
 - g++
 - python-tk
 - 32 GB RAM 
@@ -111,7 +146,7 @@ In order to do the necessary setup in a new environemt, follow the following ins
 The requirements can be installed with the following command.
 
 ```sh
-sudo apt install virtualenv python3.8 python3.8-dev python2.7 python2.7-dev g++ python-tk
+sudo apt install virtualenv python3.8 python3.8-dev python2.7 python2.7-dev g++ python-tk python3.7 python3.7-dev build-essential libssl-dev
 ```
 > **Note:** We need an environment **venv** created with python3.8 and requirements specified in the requirements.txt. We also need an environment **venv_glove** created with python2.7 and requirements specified in the requirements_glove.txt, which is necessary to train and use glove models. 
 
@@ -169,7 +204,7 @@ In order to reproduce the represented models and results, you need to follow the
     - Inputs:
     - Outputs:
 
-#### How to run new experiments
+# How to run new experiments
 ---
 In order to do customized experiments, please follow the following instructions:
 > **Note:** First of all, you'll need to clear the data and models resultant from the previous experiments. You can do so with *clear* script:
@@ -181,7 +216,8 @@ chmod +x clear.sh
 > **Note:** In order to do experiments with different train sets, you'll need to provide a csv file in */root/Appclustering/output/*, and modify **preprocessed_data_path** specified in **config.toml**.
 > **Note:** */root/Appclustering/output/sample.csv* is a small random sample of GOOGLE-PLAY.
 
-##### Training a topic model
+### Training topic models
+---
 
 First activate **venv**, then run the following command:
 ```sh
@@ -196,7 +232,7 @@ In the command above:
 > **Note:** The vocabulary and document pruning strategies have default values set in **utils. py**, **filter_words** and **filter_documents** functions. Feel free to do additional experiments with modifying the default values.
 
 The output of this script is a csv file that contain coherence scores of the trained models, which will be stored in  **topic_modeling_path** specified in **config.toml**.
-##### Retrieving the best topic model
+### Retrieving the best topic model:
 
 First activate **venv**, then run the following command:
 ```sh
@@ -207,7 +243,8 @@ In the command above:
 
 This script will choose the best topic model automatically according to the coherence scores of the topic models trained in the previous step, and store it at the directory specified in **best_topic_model_path** of **config.toml**.
 
-##### Training word embedding models
+### Training word embedding models
+---
 
 Word embedding models can be trained on subsets of the training dataset, clustered by the best topic models trained in each of the topic modeling algorithms.
 
@@ -230,7 +267,8 @@ In the above commands:
 2. *modelNumber* is the number of the subset (topic) you want to train a model on. The default value is set so that a word embedding model is trained on each and every one of the subsets.
 
 The word embedding models are stored under three different folders named with the word embedding algorithm under the directory **best_topic_model_path** specified in **config.toml**.
-##### Retrieving the best word embedding model
+
+### Retrieving the best word embedding model
 
 To retrieve the best word embedding model for a given source application, we need to:
 1. Find the most fit model's address.
@@ -264,7 +302,8 @@ from gensim.models import KeyedVectors
 glove_20 = KeyedVectors.load_word2vec_format([MODEL_PATH])
 ```
 In the above commands the MODEL_PATH is the path stored in the txt file generated in step 1.
-# CATEGORIES
+
+### CATEGORIES
 ---
 In order to train the word embdding models on subsets of GOOGLE-PLAY training set, divided by the googleplay's category metadata:
 
@@ -279,3 +318,41 @@ In the command above:
 1. *word_embedding* should be "word2vec", "fast_text", or "glove". The default value is "word2vec".
 
 Runing this scripts results in word embedding models stored in **google_play_model_path** specified in **config.toml**.
+
+
+### Semantic Matching
+---
+1. Create a virtual environment:
+```sh
+virtualenv -p /usr/bin/python3.7 venv
+```
+
+
+2. Activate the environment:
+```sh
+source venv/bin/activate
+```
+
+3. Install required packages
+
+```shell
+pip install -r requirements.txt
+```
+
+4. Modify `config.yml` following entry:
+    - `model_dir` : path to the word embedding models with respect to `model_path` entry
+
+5. In case of using a new LDA model, `embedding/app_to_cluster.csv` should be updated. You can update it manually or by help of `app_to_model_mapper.py`.
+
+> If you like to use `app_to_model_mapper.py`, you have to provide address of the LDA model in `config.yml` in the `topic_model` entry
+6. Remove the files inside `sim_scores`. Then run `clean.sh`.
+7. Run semantic matching
+
+```shell
+python run_all_combinations.py
+```
+
+8. check the results
+    - MRR and top1 values in available the `final.csv`.
+    - Results of the table in the paper are available in `table_mrr.csv` and `tabel_top1.csv`
+
