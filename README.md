@@ -43,6 +43,9 @@ The data and models used in the paper are stored in */root/Data* . In this direc
 You can follow the following steps to reproduce the results:
 > **Note:** The default values are set to produce the data and models presented in the paper. To produce these results, you can follow the following steps without worrying about the details. More detailed description is available in the next section. 
 
+> **Note:** */root/Appclustering/output/sample.csv* is a small random sample of GOOGLE-PLAY.
+In case that you don't have time, you can use the small sample to see how scripts can be run. To use the small data set modify **preprocessed_data_path** specified in **config.toml**. Obviously it will not produce the same results as the full data set.
+
 ## 2. AppClustering:
 ---
 
@@ -92,14 +95,14 @@ python google_play_clustering.py -- word_embedding "word2vec"
 python google_play_clustering.py -- word_embedding "fast_text"
 ```
 
-5. deactivate **venv** and activate **venv_glove**:
+2. deactivate **venv** and activate **venv_glove**:
 ```sh
 deactivate
 ```
 ```sh
 source venv_glove/bin/activate
 ```
-6. Train GloVe embedding technique models for the google categories
+2. Train GloVe embedding technique models for the google categories
 ```sh
 python google_play_clustering.py -- word_embedding "glove"
 ```
@@ -214,7 +217,7 @@ chmod +x clear.sh
 ./clear.sh
 ```
 > **Note:** In order to do experiments with different train sets, you'll need to provide a csv file in */root/Appclustering/output/*, and modify **preprocessed_data_path** specified in **config.toml**.
-> **Note:** */root/Appclustering/output/sample.csv* is a small random sample of GOOGLE-PLAY.
+
 
 ### Training topic models
 ---
