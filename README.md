@@ -1,3 +1,14 @@
+# The Ineffectiveness of Domain Specific Word Embedding Models for GUI Test Reuse
+F. Khalili, A. Mohebbi, V. Terragni, M. Pezze, L. Mariani, A. Heydarnoori
+
+# Introduction
+`Quick start` section provides the necessary steps to replicate the experiments of the paper. The section is structured as follow:
+- `Data` explains locations of input data set and created LDA & Word Embedding models .
+- `AppClustering` is dedicated to creating an LDA model and word embedding models. 
+- `Semantic Matching` provides steps to use created word embedding models for semantic matching. Since the word embedding models already exist you can skip the `AppClustering` part to only replicate semantic matching experiments and get the results presented in the paper.
+
+`Setup for new environment` section provides information to do the experiments in an environment other than released docker or change the current configurations. It also contains information to understand the workflow of the experiments in more detail. 
+
 # Quick Start 
 ---
 We have set up a docker container that contains the results presented in the paper, and has the environment setup necessary to reproduce those results. 
